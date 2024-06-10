@@ -8,7 +8,10 @@
 
 To run samples:
 - run `pip install -e .` in the root directory
-- run `python main.py` in the sample directory
+<!-- - run `python main.py` in the sample directory -->
+
+To run gridworld:
+- run `python -m samples.gridworld.main`in the root directory
 
 To install from PyPI,
 

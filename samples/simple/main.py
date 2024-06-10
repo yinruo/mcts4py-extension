@@ -1,4 +1,4 @@
-from mcts4py.NodeClasses import *
+from mcts4py.Nodes import *
 from mdp.simple_mdp import *
 from mcts4py.StatefulSolver import *
 

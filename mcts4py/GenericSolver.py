@@ -58,7 +58,7 @@ class GenericSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gen
         unexplored_actions = valid_action - explored_actions
 
         # Expand an unexplored action
-        action_taken = random.sample(unexplored_actions, 1)[0]
+        action_taken = random.sample(list(unexplored_actions), 1)[0]
 
         new_node = ActionNode(node, action_taken)
         node.add_child(new_node)
