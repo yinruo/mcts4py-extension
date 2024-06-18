@@ -1,0 +1,3 @@
+[submodule "LightZero"]
+	path = LightZero
+	url = https://github.com/opendilab/LightZero.git
