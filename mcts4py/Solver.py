@@ -78,7 +78,7 @@ class MCTSSolver(ABC, Generic[TAction, TNode, TRandom]):
                             print('Iteration: ', iteration_number)
                             print("----------------- EARLY STOPPING -----------------")
                         break
-
+        print(simulated_rewards)
     def run_search_iteration(self, iteration_number=0):
         # Selection
         root_node = self.root()
@@ -102,13 +102,20 @@ class MCTSSolver(ABC, Generic[TAction, TNode, TRandom]):
         self.backpropagate(expanded, simulated_reward)
         return simulated_reward
 
+
+
     # Utilities
 
     def calculate_uct(self, node: TNode) -> float:
-        parentN = node.parent.n if node.parent != None else node.n
+        if node.parent is None:
+            parentN = node.n
+        else:
+            parentN = node.parent.n
         return self.calculate_uct_impl(parentN, node.n, node.reward, self.exploration_constant)
 
     def calculate_uct_impl(self, parentN: TNode, n: TNode, reward: float, exploration_constant: float) -> float:
+        if n == 0:
+            return float('inf')
         return reward / n + exploration_constant * sqrt(log(parentN) / n)
 
     def extract_optimal_action(self) -> Optional[TAction]:

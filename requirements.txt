@@ -1,2 +1,3 @@
 numpy==1.23.2
 tqdm==4.62.3
+gymnasium[atari]

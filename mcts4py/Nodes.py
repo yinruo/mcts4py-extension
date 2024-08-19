@@ -4,7 +4,8 @@ import time
 from abc import ABC, abstractmethod
 from typing import Generic, MutableMapping, Optional, TypeVar
 from mcts4py.Types import TAction, TState, TRandom
-
+from copy import deepcopy
+from math import *
 TNode = TypeVar("TNode", bound="Node")
 
 
@@ -108,12 +109,12 @@ class ActionNode(Generic[TState, TAction], Node[TAction]):
         self.__children: list[TActionNode] = []
         self.__state: Optional[TState] = None
         self.__valid_actions: Optional[list[TAction]] = None
-
+        # the action that leads from parent node to current node 
         super().__init__(parent, inducing_action)
 
     @property
     def state(self) -> TState:
-        if self.__state == None:
+        if self.__state is None:
             raise RuntimeError(f"Simulation not run at depth: {self.depth}")
         return self.__state
 
@@ -146,8 +147,21 @@ class ActionNode(Generic[TState, TAction], Node[TAction]):
 
     def __str__(self):
         return f"Action: {self.inducing_action}"
+    
+TActionGameNode = TypeVar("TActionGameNode", bound="ActionGameNode")
 
+class ActionGameNode(Generic[TState, TAction], ActionNode[TState, TAction]):
 
+    def __init__(self,
+                 parent: Optional[TActionGameNode] = None,
+                 inducing_action: Optional[TAction] = None,
+                 is_terminal: bool = False):
+        super().__init__(parent, inducing_action)
+        self.is_terminal = is_terminal
+
+    def __str__(self):
+        return f"Action: {self.inducing_action}, Is Terminal: {self.is_terminal}"
+    
 TRandomNode = TypeVar("TRandomNode", bound="RandomNode")
 TDecisionNode = TypeVar("TDecisionNode", bound="DecisionNode")
 
@@ -293,3 +307,4 @@ class DecisionNode(Generic[TAction, TRandom], NewNode[TAction, TRandom]):
 
     def __str__(self):
         return f'Inducing: {self.inducing_action}, State: {self.state}'
+
