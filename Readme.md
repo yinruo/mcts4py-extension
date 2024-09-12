@@ -13,8 +13,7 @@ To run samples:
 To run gridworld:
 - run `python -m samples.gridworld.main`in the root directory
 
-To install from PyPI,
+To run Riverraid: 
+- run `python -m samples.Riverraid.main`in the root directory
 
-```
-python3 -m pip install --index-url https://test.pypi.org/simple/ mcts4py
 ```
