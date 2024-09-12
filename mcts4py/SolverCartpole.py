@@ -4,18 +4,21 @@ from mcts4py.Solver import *
 from mcts4py.MDP import *
 import gymnasium as gym
 import matplotlib.pyplot as plt
+from copy import deepcopy
 import time
 
-class GenericGameSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generic[TState, TAction, TRandom]):
+class SolverCartpole(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generic[TState, TAction, TRandom]):
 
     def __init__(self,
                  mdp: MDP[TState, TAction],
                  exploration_constant: float,
                  discount_factor: float,
+                 env_name: str,
                  verbose: bool = False):
 
         self.mdp = mdp
         self.discount_factor = discount_factor
+        self.env_name = env_name
         self.__root_node = ActionNode[TState, TAction](None, None)
         self.simulate_action(self.__root_node)
 
@@ -131,7 +134,7 @@ class GenericGameSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             done = False
             self.reset_root_node() 
             root_node = self.root()
-            game = gym.make('LunarLander-v2')
+            game = gym.make(self.env_name)
             game.reset()
             root_node.state.env = deepcopy(game.unwrapped)
             print('episode #' + str(e+1))
@@ -147,7 +150,12 @@ class GenericGameSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
                     game.close()
                     break
             
-            
+            rewards.append(reward)
+            moving_average.append(np.mean(rewards[-100:]))
+
+        plt.plot(rewards)
+        plt.plot(moving_average)
+        plt.show()
     def run_game_iteration(self, node: ActionNode[TState, TAction],iterations:int):
         for i in range(iterations):
             self.select(node)
@@ -161,7 +169,7 @@ class GenericGameSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             reward_episode = 0
             done = False
             root_node = self.root()
-            game = gym.make('CartPole-v1')
+            game = gym.make(self.env_name)
             game.reset()
             print('episode #' + str(e+1))
 

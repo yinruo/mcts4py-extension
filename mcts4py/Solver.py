@@ -115,8 +115,14 @@ class MCTSSolver(ABC, Generic[TAction, TNode, TRandom]):
 
     def calculate_uct_impl(self, parentN: TNode, n: TNode, reward: float, exploration_constant: float) -> float:
         if n == 0:
-            return float('inf')
-        return reward / n + exploration_constant * sqrt(log(parentN) / n)
+            return float('inf') 
+        if parentN <= 0:
+            raise ValueError("parentN must be positive")
+
+        uct_value = reward / n + exploration_constant * math.sqrt(math.log(parentN) / n)
+        return uct_value
+
+
 
     def extract_optimal_action(self) -> Optional[TAction]:
         return max(self.root().children, key=lambda c: c.reward / c.n)

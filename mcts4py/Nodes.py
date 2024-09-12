@@ -4,8 +4,9 @@ import time
 from abc import ABC, abstractmethod
 from typing import Generic, MutableMapping, Optional, TypeVar
 from mcts4py.Types import TAction, TState, TRandom
-from copy import deepcopy
 from math import *
+from collections import defaultdict
+import numpy as np
 TNode = TypeVar("TNode", bound="Node")
 
 
@@ -308,3 +309,63 @@ class DecisionNode(Generic[TAction, TRandom], NewNode[TAction, TRandom]):
     def __str__(self):
         return f'Inducing: {self.inducing_action}, State: {self.state}'
 
+
+class MENTSNode(Generic[TState, TAction], Node[TAction]):
+    def __init__(self,
+                 parent: Optional[TNode] = None,
+                 inducing_action: Optional[TAction] = None,
+                 ):
+
+        self.parent = parent
+        self.children: list[MENTSNode] = []
+        self.n = 0
+        self.depth = 0.0
+        self.__state: Optional[TState] = None
+        self.__valid_actions: Optional[list[TAction]] = None
+        self.reward = defaultdict(float)
+        self.future_reward = 0.0
+        self.Q_sft = defaultdict(float) 
+        super().__init__(parent, inducing_action)
+
+    @property
+    def state(self) -> TState:
+        if self.__state is None:
+            raise RuntimeError(f"Simulation not run at depth: {self.depth}")
+        return self.__state
+
+    @state.setter
+    def state(self, value: TState) -> None:
+        self.__state = value
+
+    @property
+    def valid_actions(self) -> list[TAction]:
+        if self.__valid_actions == None:
+            raise RuntimeError(f"Simulation not run")
+        return self.__valid_actions
+
+    @valid_actions.setter
+    def valid_actions(self, value: list[TAction]) -> None:
+        self.__valid_actions = value
+
+    def get_parent(self) -> Optional[TNode]:
+        return self.parent
+
+    def add_child(self, child: "MENTSNode") -> None:
+        self.children.append(child)
+
+    def get_children_of_action(self, action: TAction) -> list["MENTSNode"]:
+        return [child for child in self.children if child.inducing_action == action]
+
+    def is_fully_expanded(self) -> bool:
+        return len(self.children) == len(self.valid_actions)
+
+    def most_visited_child(self) -> "MENTSNode":
+        return max(self.children, key=lambda c: c.n)
+
+    def update_visit_count(self, action: TAction) -> None:
+        self.n += 1
+        self.Q_sft[action.value] = self.total_reward / self.n
+
+    def __str__(self):
+        inducing_action_value = self.inducing_action.value if self.inducing_action is not None else "None"
+        return f"State: {self.state}, Action: {inducing_action_value}, Visits: {self.n}, Q_sft: {self.Q_sft}"
