@@ -137,7 +137,7 @@ class MCTSSolver(ABC, Generic[TAction, TNode, TRandom]):
         if node.depth > 0:
             print("  " * (node.depth - 1) + " └ " + str(node))
 
-    def display_tree(self, depth_limit: int = 3) -> None:
+    def display_tree(self, depth_limit: int = 100) -> None:
         self.display_tree_impl(depth_limit, self.root(), "")
 
     def display_tree_impl(self, depth_limit: int, node: Optional[TNode], indent: str) -> None:
@@ -147,7 +147,7 @@ class MCTSSolver(ABC, Generic[TAction, TNode, TRandom]):
 
         print(
             f"{indent} {str(node)} (n: {node.n}, reward: {node.reward / node.n:.3f}, UCT: "
-            f"{self.calculate_uct(node):.3f})")
+            f"{self.calculate_uct(node):.3f}, time step: {node.state.time_step}, asset price: {node.state.asset_price})")
 
         children = node.children
 

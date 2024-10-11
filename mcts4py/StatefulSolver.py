@@ -100,8 +100,7 @@ class StatefulSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Ge
     #             if self.verbose:
     #                 print(f"-> Depth limit reached: {reward}")
     #             return reward
-    def simulate(self, node: ActionNode[TState, TAction], depth=0, iteration_number =None) -> (
-            float, ActionNode[TState, TAction]):
+    def simulate(self, node: ActionNode[TState, TAction], depth=0, iteration_number =None) -> (float):
         if self.verbose:
             print("Simulation:")
         reward = 0
