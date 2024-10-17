@@ -3,7 +3,7 @@ from mcts4py.Types import *
 from mcts4py.Solver import *
 from mcts4py.MDP import *
 import gymnasium as gym
-from samples.option.USoptionMDP import USoptionAction, USoptionState
+from samples.option.USoptionMDPOG import USoptionAction, USoptionState
 import matplotlib.pyplot as plt
 from longstaff_schwartz.algorithm import longstaff_schwartz
 from longstaff_schwartz.stochastic_process import GeometricBrownianMotion
@@ -15,12 +15,10 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
                  mdp: MDP[TState, TAction],
                  simulation_depth_limit: int,
                  exploration_constant: float,
-                 discount_factor: float,
                  verbose: bool = False):
 
         self.mdp = mdp
         self.simulation_depth_limit = simulation_depth_limit
-        self.discount_factor = discount_factor
         self.__root_node = ActionNode[TState, TAction](None, None)
         self.simulate_action(self.__root_node)
 
@@ -33,7 +31,7 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         root_node = ActionNode[TState, TAction](None, None)
         self.simulate_action(root_node)
         self.reset_tree(root_node)
-        self.run_iteration(root_node, 100000)
+        self.run_iteration(root_node, 1000000)
         self.print_asset_price_tree(root_node)
         print("The price of the american option is",root_node.reward)
         return root_node.reward
@@ -42,13 +40,16 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         for i in range(iterations):
             explore_node = self.select(node)
             expanded = self.expand(explore_node)
-            self.simulate(expanded)
+            if expanded.inducing_action == USoptionAction.UP_HOLD or expanded.inducing_action == USoptionAction.DOWN_HOLD:
+                self.simulate(expanded)
+            else: 
+                expanded.reward = self.get_payoff(expanded.state.asset_price)
             self.backpropagate(expanded)
             #simulated_reward = self.simulate(expanded)
             #self.backpropagate(expanded, simulated_reward) 
-            all_terminal = self.all_leaf_nodes_terminal(node)
-            if all_terminal: 
-                break
+            #all_terminal = self.all_leaf_nodes_terminal(node)
+            #if all_terminal: 
+                #break
     
     def get_payoff(self, S):
         if self.mdp.option_type == "Put":
@@ -86,79 +87,74 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
 
 
     def select(self, node: ActionNode[TState, TAction], iteration_number=None) -> ActionNode[TState, TAction]:
+        if len(node.children) == 0:
+            return node
+
         current_node = node
-        if len(current_node.children) == 0:
-            return current_node
+        self.simulate_action(node)
 
         while True:
-            current_children = current_node.children
             # If the node is terminal, return it
-            if self.mdp.is_terminal(current_node.state) or len(current_children)==0:
+            if self.mdp.is_terminal(current_node.state):
                 return current_node
 
+            current_children = current_node.children
+            explored_actions = set([c.inducing_action for c in current_children])
+
+            # This state has not been fully explored, return it
+            if len(set(current_node.valid_actions) - explored_actions) > 0:
+                return current_node
             
-            if np.random.rand() < self.mdp.p:
-                children_up = [child for child in current_children if child.inducing_action == USoptionAction.UP]
-                if children_up:
-                    current_node = random.choice(children_up)
-                else:
-                    raise ValueError("No child with UP action found")
+            exercise_children = [child for child in current_children if child.inducing_action == USoptionAction.UP_EXERCISE or child.inducing_action == USoptionAction.DOWN_EXERCISE]
+            non_exercise_children = [child for child in current_children if child not in exercise_children]
+
+            if non_exercise_children:
+                current_node = random.choice(non_exercise_children)
             else:
-                children_down = [child for child in current_children if child.inducing_action == USoptionAction.DOWN]
-                if children_down:
-                    current_node = random.choice(children_down)
-                else:
-                    raise ValueError("No child with DOWN action found")
+                print("No non-exercise children available")
+
+            self.simulate_action(current_node)
+
 
     def expand(self, node: ActionNode[TState, TAction], iteration_number=None) -> ActionNode[TState, TAction]:
         # If the node is terminal, return it
         if self.mdp.is_terminal(node.state):
             return node
-        valid_actions = self.mdp.actions(node.state)
 
-        for action in valid_actions:
-            new_node = ActionNode(node, action)
-            node.add_child(new_node)
-            self.simulate_action(new_node)
+        current_children = node.children
+        explored_actions = set([c.inducing_action for c in current_children])
+        valid_action: set[TAction] = set(node.valid_actions)
+        unexplored_actions = valid_action - explored_actions
 
-        
-        return random.choice(node.children)
+        # Expand an unexplored action
+        action_taken = random.sample(list(unexplored_actions), 1)[0]
+
+        new_node = ActionNode(node, action_taken)
+        node.add_child(new_node)
+        self.simulate_action(new_node)
+
+        return new_node
 
     def simulate(self, node: ActionNode[TState, TAction], depth=0) -> float:
-        S = node.state.asset_price
-        time_step = node.state.time_step
-
-        immediate_payoff = self.get_payoff(S)
-        node.state.imme = immediate_payoff
-        future_expected_reward = self.simulate_future(S)
-        node.state.expect = future_expected_reward
-
-        if future_expected_reward > immediate_payoff:
-            node.reward = future_expected_reward
-            return "HOLD"
-        else:
-            node.reward = immediate_payoff
-            node.state.is_terminal = True
-            return "EXERCISE"
+        while True:
+            actions = self.mdp.actions(node.state)
+            random_action = random.choice(actions)
+            new_state = self.mdp.transition(node.state, random_action)
+            if new_state.time_step == self.mdp.T or new_state.is_terminal == True:
+                final_reward = self.get_payoff(new_state.asset_price)
+                node.reward = final_reward
+                break
             
 
     def backpropagate(self, node: ActionNode[TState, TAction]) -> None:
-        node.n += 1
-        current_node = node.parent
-        while current_node is not None:
+        current_node = node
+        current_reward = current_node.reward
+
+        while current_node != None:
+            current_node.reward += current_reward
             current_node.n += 1
-            future_rewards = [child.reward for child in current_node.children if child.reward is not None]
-            immediate_payoff = self.get_payoff(current_node.state.asset_price)
-            # If children exist, calculate the average reward
-            if future_rewards:
-                average_reward = np.mean(future_rewards)  # Calculate the average reward of the children
-                if average_reward > immediate_payoff:
-                    current_node.reward = average_reward
-                else:
-                    current_node.reward = immediate_payoff
-            else:
-                current_node.reward = immediate_payoff
             current_node = current_node.parent
+            current_reward *= (1-self.mdp.r)
 
     # Utilities
 
@@ -188,7 +184,7 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         indent = prefix + ("|-- " if is_last else "|-- ")
         
         # Print both asset price and option price at each node
-        print(f"{indent}asset price: {node.state.asset_price:.4f}, option price: {node.reward:.4f}, time: {node.state.time_step} ")
+        print(f"{indent}asset price: {node.state.asset_price:.4f}, action: {node.inducing_action}, reward: {node.reward:.4f}, time: {node.n} ")
 
         prefix += "    " if is_last else "|   "
         
@@ -199,7 +195,8 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
             self.print_tree(child, level + 1, is_last_child, prefix)
 
     def print_asset_price_tree(self, node):
-        print("资产价格树：")
+        print("Tree：")
+        node.reward /= node.n
         self.print_tree(node)
 
     def all_leaf_nodes_terminal(self,node):
