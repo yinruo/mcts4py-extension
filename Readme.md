@@ -16,4 +16,7 @@ To run gridworld:
 To run Riverraid: 
 - run `python -m samples.Riverraid.main`in the root directory
 
+To run american option pricing : 
+- run `python -m samples.option.main`in the root directory
+
 ```
