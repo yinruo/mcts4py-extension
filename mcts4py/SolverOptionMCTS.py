@@ -31,7 +31,7 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         root_node = ActionNode[TState, TAction](None, None)
         self.simulate_action(root_node)
         self.reset_tree(root_node)
-        self.run_iteration(root_node, 1000000)
+        self.run_iteration(root_node, 10000)
         self.print_asset_price_tree(root_node)
         print("The price of the american option is",root_node.reward)
         return root_node.reward

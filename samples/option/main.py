@@ -32,7 +32,7 @@ USsolver.display_tree() """
 from mcts4py.SolverOptionMCTS import SolverOption
 from samples.option.USoptionMDPOG import *
 
-mdp = USoptionMDPOG(option_type = "Put", S0=1, K=0.9, r=0.01, T=5, dt = 1/2, sigma=0.15)
+mdp = USoptionMDPOG(option_type = "Put", S0=1, K=0.95, r=0.01, T=5, dt = 1/2, sigma=0.15)
 USsolver = SolverOption(
     mdp,
     simulation_depth_limit=100,

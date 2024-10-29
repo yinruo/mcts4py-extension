@@ -3,11 +3,10 @@ from mcts4py.Types import *
 from mcts4py.Solver import *
 from mcts4py.MDP import *
 import gymnasium as gym
-import matplotlib.pyplot as plt
 from copy import deepcopy
 import time
 
-class SolverCartpole(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generic[TState, TAction, TRandom]):
+class SolverCartpole2(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generic[TState, TAction, TRandom]):
 
     def __init__(self,
                  mdp: MDP[TState, TAction],
@@ -31,41 +30,28 @@ class SolverCartpole(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Ge
 
     def select(self, node: ActionNode[TState, TAction], iteration_number=None) -> ActionNode[TState, TAction]:
         current_node = node
-        while current_node.children:
-            children = current_node.children
-            max_uct_value = max(self.calculate_uct(c) for c in children)
-            best_children = [c for c in children if self.calculate_uct(c) == max_uct_value]
+        while True:
+            current_children = current_node.children
+            explored_actions = set([c.inducing_action for c in current_children])
+            if len(set(current_node.valid_actions) - explored_actions) > 0:
+                return current_node
+            max_uct_value = max(self.calculate_uct(c) for c in current_children)
+            best_children = [c for c in current_children if self.calculate_uct(c) == max_uct_value]
             current_node = random.choice(best_children)
-
-        if current_node.n < 1:
-            current_node.reward = current_node.reward + self.simulate(current_node)
-        else:
-            self.expand(current_node)
-            if current_node.children:
-                current_node = random.choice(current_node.children)
-                current_node.reward = current_node.reward + self.simulate(current_node)
-            
-        current_node.n += 1
-
-        self.backpropagate(current_node, current_node.reward)
-
-        return current_node
         
         
 
     def expand(self, node: ActionNode[TState, TAction], iteration_number=None) -> ActionNode[TState, TAction]:
-        # If the node is terminal, return it
-        if self.mdp.is_terminal(node.state):
-            return node
-        valid_actions = node.valid_actions
-
-        for action in valid_actions:
-            new_node = ActionNode(node, action)
-            node.add_child(new_node)
-            self.simulate_action(new_node)
-            
-
+        current_children = node.children
+        valid_action: set[TAction] = set(node.valid_actions)
+        explored_actions = set([c.inducing_action for c in current_children])
+        unexplored_actions = valid_action - explored_actions
+        action_taken = random.sample(list(unexplored_actions), 1)[0]
+        new_node = ActionNode(node, action_taken)
+        node.add_child(new_node)
+        self.simulate_action(new_node)
         return new_node
+
 
     def simulate(self, node: ActionNode[TState, TAction]) -> float:
         new_game = deepcopy(node.state.env)
@@ -83,14 +69,11 @@ class SolverCartpole(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Ge
                 
 
     def backpropagate(self, node: ActionNode[TState, TAction], reward: float) -> None:
-        current_node = node
-        current_reward = reward
-        while current_node.parent:
-            current_node = current_node.parent
-            current_node.reward += current_reward
-            current_node.n += 1
+        while node is not None:
+            node.reward += reward
+            node.n += 1
+            node = node.parent
 
-    # Utilities
 
     def simulate_action(self, node: ActionNode[TState, TAction]):
         # If this is a top node, initialize the parameter for the node 
@@ -141,7 +124,7 @@ class SolverCartpole(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Ge
             print('episode #' + str(e+1))
 
             while not done:
-                root_node, action = self.run_game_iteration(root_node, 10)
+                root_node, action = self.run_game_iteration(root_node, 50)
                 observation, reward, terminated, truncated, _ = game.step(action.value)
                 reward_episode += reward
                 done = terminated or truncated
@@ -153,13 +136,12 @@ class SolverCartpole(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Ge
             
             rewards.append(reward)
             moving_average.append(np.mean(rewards[-100:]))
-
-        plt.plot(rewards)
-        plt.plot(moving_average)
-        plt.show()
     def run_game_iteration(self, node: ActionNode[TState, TAction],iterations:int):
         for i in range(iterations):
-            self.select(node)
+            current_node = self.select(node)
+            expand_new_node = self.expand(current_node)
+            reward = self.simulate(expand_new_node)
+            self.backpropagate(expand_new_node, reward)
         next_node, next_action = self.next(node)
         return next_node, next_action
     

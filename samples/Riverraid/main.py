@@ -5,11 +5,13 @@ from mcts4py.SolverMENTS import *
 from mcts4py.StatefulSolver import *
 from mcts4py.GenericSolver import GenericSolver
 from samples.Riverraid.RiverraidMDP import *
+from samples.Riverraid.gameMDP import *
 import matplotlib.pyplot as plt
 
-mdp = RiverraidMDP()
+""" mdp = RiverraidMDP() """
+mdp = gameMDP() 
 
-solverMCTS = SolverGame(
+""" solverMCTS = SolverGame(
     mdp,
     exploration_constant = 1.0,
     simulation_depth_limit = 100,
@@ -19,7 +21,7 @@ solverMCTS = SolverGame(
 
 
 rewards_mcts, average_mcts = solverMCTS.run_game(5)
-rewards_random, average_random = solverMCTS.run_random_game(5)
+rewards_random, average_random = solverMCTS.run_random_game(5) """
 
 solverMENTS = SolverMENTS(
     mdp,
@@ -35,7 +37,7 @@ solverMENTS = SolverMENTS(
 rewards_ments, average_ments = solverMENTS.run_game(5)  
 
 
-max_mcts = max(rewards_mcts)
+""" max_mcts = max(rewards_mcts)
 max_random = max(rewards_random)
 max_ments = max(rewards_ments)
 
@@ -54,6 +56,6 @@ plt.title("Rewards per Episode")
 plt.legend()
 
 plt.grid(True)
-plt.show()
+plt.show() """
 
 

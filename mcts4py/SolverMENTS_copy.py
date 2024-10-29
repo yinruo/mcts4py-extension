@@ -6,8 +6,9 @@ import random
 import gymnasium as gym
 import matplotlib.pyplot as plt
 from collections import defaultdict
+from copy import deepcopy
 
-class SolverMENTS(MCTSSolver[TAction, MENTSNode[TRandom, TAction], TRandom], Generic[TState, TAction, TRandom]):
+class SolverMENTS_copy(MCTSSolver[TAction, MENTSNode[TRandom, TAction], TRandom], Generic[TState, TAction, TRandom]):
     def __init__(self, 
                  mdp: MDP[TState, TAction], 
                  simulation_depth_limit, 
@@ -24,27 +25,26 @@ class SolverMENTS(MCTSSolver[TAction, MENTSNode[TRandom, TAction], TRandom], Gen
         self.temperature = temperature
         self.epsilon = epsilon
         self.env_name = env_name
-        self.__root_node = MENTSNode[TState, TAction](None, None)
-        self.simulate_action(self.__root_node)
-        self.env = gym.make(self.env_name)
-        self.env.reset()
+        #self.__root_node = MENTSNode[TState, TAction](None, None)
+        #self.simulate_action(self.__root_node)
+        #self.env = gym.make(self.env_name)
+        #self.env.reset()
 
         super().__init__(exploration_constant, verbose)
 
     def reset_node(self, node: MENTSNode[TState, TAction]):
         # Reset the node's statistics
-        node.n = 0
+        node.n = defaultdict(float)  
+        for action in node.valid_actions:
+            node.n[action.value] = 0.0
         node.max_reward = float('-inf')
         node.depth = 0.0
         node.Q_sft = defaultdict(float)  
         node.reward = defaultdict(float)
-        node.future_reward = 0.0
         for action in node.valid_actions:
             node.Q_sft[action.value] = 0.0
 
     def run_game(self, episodes: int):
-        actions = []
-        rewards = []
         total_reward = 0
         for e in range(episodes):
             reward_episode = 0
@@ -53,44 +53,47 @@ class SolverMENTS(MCTSSolver[TAction, MENTSNode[TRandom, TAction], TRandom], Gen
             self.simulate_action(root_node)
             self.reset_node(root_node)
             root_node.state = self.mdp.initial_state() 
-            print(root_node)
-            initial_s = self.env.unwrapped.clone_state(include_rng=True)
+            game = gym.make(self.env_name)
+            game.reset()
+            root_node.state.env = deepcopy(game.unwrapped)
             print('episode #' + str(e+1))
-
+            current_node = root_node
             while not done: 
-                root_node, action = self.run_iteration(root_node, 30)
+                next_node, action = self.run_iteration(current_node, 100)
                 print(action.value)
-                observation, reward, terminated, truncated, _ = self.env.step(action.value)
-                actions.append(action)
+                observation, reward, terminated, truncated, _ = game.step(action.value)
                 reward_episode += reward
+                print("reward for episode " + str(e+1), reward_episode)
                 done = terminated or truncated
+                current_node = next_node
 
                 if done:
                     print('reward ' + str(reward_episode))
-                    rewards.append(reward_episode)
                     total_reward += reward_episode 
-                    self.env.close()
+                    game.close()
                     break
         average_reward = total_reward / episodes if episodes > 0 else 0
-        return rewards, average_reward
+        return average_reward
 
     def run_iteration(self, node, iterations):
-        current_state = self.env.unwrapped.clone_state(include_rng=True)
         for i in range(iterations):
-            self.env.unwrapped.restore_state(current_state)
             if self.verbose:
                 print("Select start")
-            selected_node, selected_action = self.select(node)
+            selected_node = self.select(node)
             if self.verbose:
                 print("Expand start")
-            expanded = self.expand(selected_node, selected_action)
+            expanded, action = self.expand(selected_node)
+            if action == None:
+                continue
             if self.verbose:
                 print("Simulate start")
-            self.simulate(expanded)
+            R = self.simulate(expanded)
             if self.verbose:
                 print("Backpropagate start")
-            self.backpropagate(selected_node, selected_action)
+            self.backpropagate(selected_node, action, R)
 
+        if not node.children:
+            print("No children added to root node after iterations")
         children = node.children
         best_child = max(children, key=lambda c: c.Q_sft[c.inducing_action.value])
         return best_child, best_child.inducing_action
@@ -112,8 +115,10 @@ class SolverMENTS(MCTSSolver[TAction, MENTSNode[TRandom, TAction], TRandom], Gen
     
         return soft_indmax_value
 
-    def e2w(self, node: MENTSNode[TState, TAction]): 
-        total_visits = node.n
+    def e2w(self, node: MENTSNode[TState, TAction]):
+        total_visits = 0
+        for action in node.valid_actions:
+            total_visits += node.n[action.value]
         if total_visits == 0:
             lambda_s = 1.0 
         else:
@@ -134,79 +139,102 @@ class SolverMENTS(MCTSSolver[TAction, MENTSNode[TRandom, TAction], TRandom], Gen
         if node.parent == None:
             initial_state = self.mdp.initial_state()
             node.state = initial_state
-            node.valid_actions = self.mdp.actions()
+            node.valid_actions = self.mdp.actions(node.state)
             return
 
         if node.inducing_action == None:
             raise RuntimeError("Action was null for non-null parent")
         new_state = self.mdp.transition(node.parent.state, node.inducing_action)
         node.state = new_state
-        node.valid_actions = self.mdp.actions()
+        node.valid_actions = self.mdp.actions(node.state)
     
     def select(self, node: MENTSNode[TState, TAction]):
+        if len(node.children) == 0:
+            return node
+
+        current_node = node
         self.simulate_action(node)
-        while True: 
-            action = self.e2w(node)
-            if self.verbose:
-                print("e2w chosen action:", action.value)
-            observation, node_reward, terminated, truncated, _ = self.env.step(action.value)
-            node.reward[action.value] = node_reward
-            if self.verbose:
-                print("instant reward:", node_reward)
-                for child in node.children:
-                    print(f"Checking child: {child}")
-            child_node = next((child for child in node.children if child.inducing_action.value == action.value), None)
+
+        while True:
+            # If the node is terminal, return it
+            if self.mdp.is_terminal(current_node.state):
+                return current_node
+
+            current_children = current_node.children
+            explored_actions = set([c.inducing_action for c in current_children])
+
+            # This state has not been fully explored, return it
+            if len(set(current_node.valid_actions) - explored_actions) > 0:
+                return current_node
+            
+            action = self.e2w(current_node)
+            child_node = next((child for child in current_children if child.inducing_action == action), None)
             if self.verbose:
                 print("child_node:", child_node)
                 print("node children", node.children)
             if child_node:
                 # Continue looping with this child node
-                node = child_node
-            else:
-                # If no such child exists, return the current node
-                return node, action
+                current_node = child_node
 
-    def expand(self, node: MENTSNode[TState, TAction], action):
-        new_node = MENTSNode(node, action)
+    def expand(self, node: MENTSNode[TState, TAction]):
+        # If the node is terminal, return it
+        if node.state.is_terminal:
+            return node, None
+
+        current_children = node.children
+        explored_actions = set([c.inducing_action for c in current_children])
+        valid_action: set[TAction] = set(node.valid_actions)
+        unexplored_actions = valid_action - explored_actions
+        if self.verbose:
+            print("unexplored_actions: ",unexplored_actions)
+
+        # Expand an unexplored action
+        action_taken = random.sample(list(unexplored_actions), 1)[0]
+        if self.verbose:
+            print("selected action: ",action_taken)
+
+        new_node = MENTSNode(node, action_taken)
         node.add_child(new_node)
         self.simulate_action(new_node)
         self.reset_node(new_node)
-        self.env.unwrapped.restore_state(node.state.current_state)
-        observation, int_reward, terminated, truncated, _ = self.env.step(action.value)
-        node.reward[action.value] = int_reward
-        return new_node
+        new_game = deepcopy(node.state.env)
+        observation, r_reward, terminated, truncated, _ = new_game.step(action_taken.value)
+        node.reward[action_taken.value] = r_reward
+        return new_node, action_taken
 
 
     def simulate(self, node):
-        current_state = self.env.unwrapped.clone_state(include_rng=True)
+        new_game = deepcopy(node.state.env)
         parent_node = node.parent
         done = False
-        parent_node.future_reward = 0
+        R = 0
         while not done:
             random_action = random.choice(node.valid_actions)
-            observation, r_reward, terminated, truncated, _ = self.env.step(random_action.value)
+            observation, r_reward, terminated, truncated, _ = new_game.step(random_action.value)
             done = terminated or truncated
-            parent_node.future_reward += r_reward
+            R += r_reward
             if done:
-                self.env.unwrapped.restore_state(current_state)
                 if self.verbose:
-                    print("future reward:",parent_node.future_reward)
-                break
+                    print("future reward:",R)
+                return R
 
-    def backpropagate(self, node, action):
-        node.n += 1
-        node.Q_sft[action.value] = node.reward[action.value] + node.future_reward
-        parent_node = node.parent
+    def backpropagate(self, node, action, R):
+        node.n[action.value] += 1
+        node.Q_sft[action.value] = node.reward[action.value] + R
+        inducing_action = node.inducing_action
+        softmax_value = self.softmax_value(node.Q_sft)
+        node = node.parent
 
-        while parent_node: 
+        while node: 
             # Softmax backup
-            parent_node.n += 1
-            for action in node.valid_actions:
-                parent_node.Q_sft[action.value] = node.reward[action.value] + self.softmax_value(node.Q_sft)
+            node.n[inducing_action.value] += 1
+            node.Q_sft[inducing_action.value] = node.reward[inducing_action.value] + softmax_value
+            if self.verbose:
+                print("softmax value:", softmax_value)
             if self.verbose:
                 print("Q_sft:", node.Q_sft)
-            node = parent_node
-            parent_node = parent_node.parent 
+            softmax_value = self.softmax_value(node.Q_sft)
+            node = node.parent
 
 
 
