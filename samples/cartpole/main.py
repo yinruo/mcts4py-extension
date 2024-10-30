@@ -48,8 +48,8 @@ solver = SolverCartpoleMents(
     mdp,
     exploration_constant = 1.0,
     discount_factor = 1,
-    temperature = 0.5,
-    epsilon = 0.2,
+    temperature = 0.3,
+    epsilon = 0.1,
     env_name = "CartPole-v1",
     verbose = False)
 solver.run_game(7)

@@ -52,12 +52,11 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
     
 
     def softmax_value(self, Q_values):
-        temp = self.temperature
         Q_values_array = np.array(list(Q_values.values()))
         max_Q = np.max(Q_values_array) 
-        exp_values = np.exp((Q_values_array - max_Q) / temp) 
+        exp_values = np.exp((Q_values_array - max_Q) / self.temperature) 
         sum_exp_values = np.sum(exp_values)  
-        softmax_val = temp * np.log(sum_exp_values)+ max_Q  
+        softmax_val = self.temperature * np.log(sum_exp_values)+ max_Q  
         return softmax_val
     
     def soft_indmax(self, Q_values):
@@ -65,7 +64,7 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
         Q_values_array = np.array(list(Q_values.values()))
         # Calculate fτ(r) using the formula exp((r - Fτ(r)) / τ)
         soft_indmax_value = np.exp((Q_values_array - softmax) / self.temperature)
-    
+        soft_indmax_value /= np.sum(soft_indmax_value)
         return soft_indmax_value
     
     def reset_node(self, node: MENTSNode[TState, TAction]):
@@ -122,16 +121,13 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
                 
 
     def backpropagate(self, node: MENTSNode[TState, TAction], action, reward: float) -> None:
-        # Step 1: 更新叶节点的父节点
         node.n[action.value] += 1
         node.Q_sft[action.value] = node.reward[action.value] + reward
         softmax_value = self.softmax_value(node.Q_sft)
-        inducing_action = node.inducing_action  # 获取叶节点的父节点所带来的 action
-        node = node.parent  # 向上移动一个节点
+        inducing_action = node.inducing_action 
+        node = node.parent 
 
-        # Step 2: 对于非叶节点的递归更新，使用 softmax backup
         while node:
-            # 更新当前节点的访问次数和 Q 值
             node.n[inducing_action.value] += 1
             node.Q_sft[inducing_action.value] = node.reward[inducing_action.value] + softmax_value
             
@@ -139,9 +135,8 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
                 print("softmax value:", softmax_value)
                 print("Q_sft:", node.Q_sft)
 
-            # 计算当前节点的 Q_sft 的 softmax 值，并用于更新上层节点
             softmax_value = self.softmax_value(node.Q_sft)
-            inducing_action = node.inducing_action  # 更新为当前节点的 inducing_action
+            inducing_action = node.inducing_action  
             node = node.parent  # 向上移动到上一级节点
 
 
@@ -195,7 +190,7 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
             print('episode #' + str(e+1))
 
             while not done:
-                root_node, action = self.run_game_iteration(root_node,50)
+                root_node, action = self.run_game_iteration(root_node,20)
                 observation, reward, terminated, truncated, _ = game.step(action.value)
                 reward_episode += reward
                 done = terminated or truncated
@@ -213,7 +208,6 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
             expand_new_node, action_taken = self.expand(current_node)
             reward = self.simulate(expand_new_node)
             self.backpropagate(expand_new_node,action_taken, reward)
-        #next_node, next_action = self.next(node)
         best_action_value = max(node.n, key=lambda action_value: node.n[action_value])
 
         best_action = None

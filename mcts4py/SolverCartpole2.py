@@ -93,19 +93,6 @@ class SolverCartpole2(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], G
         del node.parent
         node.parent = None
 
-    def next(self,node: ActionNode[TState, TAction]):
-
-        if self.mdp.is_terminal(node.state):
-            raise ValueError("game has ended")
-
-        children = node.children
-        max_n = max(node.n for node in children)
-
-        best_children = [c for c in children if c.n == max_n]
-        best_child = random.choice(best_children)
-
-        return best_child, best_child.inducing_action
-
 
     def reset_root_node(self):
         self.__root_node = ActionNode[TState, TAction](None, None)
