@@ -30,13 +30,13 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
     def root(self) -> MENTSNode[TState, TAction]:
         self.__root_node = MENTSNode[TState, TAction](None, None)
         self.simulate_action(self.__root_node)
-        self.reset_node(self.__root_node)
+        #self.reset_node(self.__root_node)
         return self.__root_node
     
     def e2w(self, node: MENTSNode[TState, TAction]):
         total_visits = 0
         for action in node.valid_actions:
-            total_visits += node.n[action.value]
+            total_visits += node.visits[action.value]
         if total_visits == 0:
             lambda_s = 1.0 
         else:
@@ -67,17 +67,17 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
         soft_indmax_value /= np.sum(soft_indmax_value)
         return soft_indmax_value
     
-    def reset_node(self, node: MENTSNode[TState, TAction]):
+    #def reset_node(self, node: MENTSNode[TState, TAction]):
         # Reset the node's statistics
-        node.n = defaultdict(float)  
-        for action in node.valid_actions:
-            node.n[action.value] = 0.0
-        node.max_reward = float('-inf')
-        node.depth = 0.0
-        node.Q_sft = defaultdict(float)  
-        node.reward = defaultdict(float)
-        for action in node.valid_actions:
-            node.Q_sft[action.value] = 0.0
+        #node.n = defaultdict(float)  
+        #for action in node.valid_actions:
+            #node.n[action.value] = 0.0
+        #node.max_reward = float('-inf')
+        #node.depth = 0.0
+        #node.Q_sft = defaultdict(float)  
+        #node.reward = defaultdict(float)
+        #for action in node.valid_actions:
+            #node.Q_sft[action.value] = 0.0
 
     def select(self, node: MENTSNode[TState, TAction], iteration_number=None) -> MENTSNode[TState, TAction]:
         current_node = node
@@ -98,10 +98,10 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
         new_node = MENTSNode(node, action_taken)
         node.add_child(new_node)
         self.simulate_action(new_node)
-        self.reset_node(new_node)
+        #self.reset_node(new_node)
         new_game = deepcopy(node.state.env)
         observation, r_reward, terminated, truncated, _ = new_game.step(action_taken.value)
-        node.reward[action_taken.value] = r_reward
+        node.action_reward[action_taken.value] = r_reward
         return new_node, action_taken
 
     def simulate(self, node: MENTSNode[TState, TAction]) -> float:
@@ -121,15 +121,15 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
                 
 
     def backpropagate(self, node: MENTSNode[TState, TAction], action, reward: float) -> None:
-        node.n[action.value] += 1
-        node.Q_sft[action.value] = node.reward[action.value] + reward
+        node.visits[action.value] += 1
+        node.Q_sft[action.value] = node.action_reward[action.value] + reward
         softmax_value = self.softmax_value(node.Q_sft)
         inducing_action = node.inducing_action 
         node = node.parent 
 
         while node:
-            node.n[inducing_action.value] += 1
-            node.Q_sft[inducing_action.value] = node.reward[inducing_action.value] + softmax_value
+            node.visits[inducing_action.value] += 1
+            node.Q_sft[inducing_action.value] = node.action_reward[inducing_action.value] + softmax_value
             
             if self.verbose:
                 print("softmax value:", softmax_value)
@@ -154,6 +154,8 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
         new_state = self.mdp.transition(node.parent.state, node.inducing_action)
         node.state = new_state
         node.valid_actions = self.mdp.actions(node.state) 
+        for action in node.valid_actions:
+            node.Q_sft[action.value] = 0.0
 
     def detach_parent(self,node: MENTSNode[TState, TAction]):
         del node.parent
@@ -165,7 +167,7 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
             raise ValueError("game has ended")
 
         children = node.children
-        max_n = max(node.n for node in children)
+        max_n = max(node.visits for node in children)
 
         best_children = [c for c in children if c.n == max_n]
         best_child = random.choice(best_children)
@@ -190,7 +192,7 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
             print('episode #' + str(e+1))
 
             while not done:
-                root_node, action = self.run_game_iteration(root_node,20)
+                root_node, action = self.run_game_iteration(root_node,30)
                 observation, reward, terminated, truncated, _ = game.step(action.value)
                 reward_episode += reward
                 done = terminated or truncated
@@ -208,7 +210,7 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
             expand_new_node, action_taken = self.expand(current_node)
             reward = self.simulate(expand_new_node)
             self.backpropagate(expand_new_node,action_taken, reward)
-        best_action_value = max(node.n, key=lambda action_value: node.n[action_value])
+        best_action_value = max(node.visits, key=lambda action_value: node.visits[action_value])
 
         best_action = None
         for action in node.valid_actions:

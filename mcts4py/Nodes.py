@@ -322,9 +322,11 @@ class MENTSNode(Generic[TState, TAction], Node[TAction]):
         self.depth = 0.0
         self.__state: Optional[TState] = None
         self.__valid_actions: Optional[list[TAction]] = None
-        self.reward = defaultdict(float)
+        self.reward = 0.0
+        self.action_reward = defaultdict(float)
         self.future_reward = 0.0
         self.Q_sft = defaultdict(float) 
+        self.visits = defaultdict(float) 
         super().__init__(parent, inducing_action)
 
     @property
