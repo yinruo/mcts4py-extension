@@ -125,12 +125,12 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         return random.choice(node.children)
 
     def simulate(self, node: ActionNode[TState, TAction], depth=0) -> float:
-        S = node.state.asset_price
+        asset_price = node.state.asset_price
         time_step = node.state.time_step
 
-        immediate_payoff = self.get_payoff(S)
+        immediate_payoff = self.get_payoff(asset_price)
         node.state.imme = immediate_payoff
-        future_expected_reward = self.simulate_future(S)
+        future_expected_reward = self.simulate_future(asset_price)
         node.state.expect = future_expected_reward
 
         if future_expected_reward > immediate_payoff:

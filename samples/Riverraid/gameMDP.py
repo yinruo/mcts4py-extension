@@ -18,7 +18,7 @@ class RiverraidState:
 
 class gameMDP(MDP[RiverraidAction, RiverraidState]):
     def __init__(self,
-                 env_name: str = 'CartPole-v1'
+                 env_name: str = 'ALE/Riverraid-v5'
                  ):
         self.env = gym.make(env_name)
 
