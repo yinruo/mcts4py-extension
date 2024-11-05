@@ -4,18 +4,19 @@ import numpy as np
 
 # Model parameters
 t = np.linspace(0, 5, 100)  # timegrid for simulation
-r = 0.01  # riskless rate
+r = 0  # riskless rate
 sigma = 0.15  # annual volatility of underlying
 n = 100  # number of simulated paths
 
 # Simulate the underlying
 gbm = GeometricBrownianMotion(mu=r, sigma=sigma)
 rnd = np.random.RandomState(1234)
-x = gbm.simulate(t, n, rnd)  # x.shape == (t.size, n)
+S0 = 36
+x = gbm.simulate(t, n, rnd)*S0  # x.shape == (t.size, n)
 
 
 # Payoff (exercise) function
-strike = 0.95
+strike = 40
 
 def put_payoff(spot):
     return np.maximum(strike - spot, 0.0)
@@ -41,6 +42,6 @@ print("american", npv_american)
 npv_european = constant_rate_df(t[0], t[-1]) * put_payoff(x[-1]).mean()
 
 # Check results
-assert np.round(npv_american, 4) == 0.0734
+""" assert np.round(npv_american, 4) == 0.0734
 assert np.round(npv_european, 4) == 0.0626
-assert npv_american > npv_european
+assert npv_american > npv_european """

@@ -58,9 +58,9 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         elif self.mdp.option_type == "Call":
             return np.maximum(S - self.mdp.K, 0)
           
-    def simulate_gbm(self, S, dt, r, sigma):
+    """ def simulate_gbm(self, S, dt, r, sigma):
         Z = np.random.normal()
-        return S * np.exp((r - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * Z)
+        return S * np.exp((r - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * Z) """
 
     """     def simulate_future(self, S):
         future_price = S
@@ -75,7 +75,7 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         
         return discounted_payoff """
 
-    def simulate_future(self, S):
+    """ def simulate_future(self, S):
         #if self.mdp.option_type == "Put":
             #putCall = BlackScholesPut(S = S, K=self.mdp.K, T=self.mdp.T, r=self.mdp.r, sigma= self.mdp.sigma, q=0)
             #binomial_price = putCall.price() 
@@ -84,7 +84,7 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
             #binomial_price = callCall.price() 
         binomial_model = BinomialTreeOption(S, self.mdp.K, self.mdp.r, self.mdp.T, self.mdp.sigma, self.mdp.dt, self.mdp.option_type)
         binomial_price = binomial_model.price()
-        return binomial_price
+        return binomial_price """
 
 
     def select(self, node: ActionNode[TState, TAction], iteration_number=None) -> ActionNode[TState, TAction]:
