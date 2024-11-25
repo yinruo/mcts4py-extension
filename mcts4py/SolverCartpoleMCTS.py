@@ -13,11 +13,13 @@ class SolverCartpoleMCTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom]
                  exploration_constant: float,
                  discount_factor: float,
                  env_name: str,
+                 iteration_time : int,
                  verbose: bool = False):
 
         self.mdp = mdp
         self.discount_factor = discount_factor
         self.env_name = env_name
+        self.iteration_time = iteration_time
         #self.__root_node = ActionNode[TState, TAction](None, None)
         #self.simulate_action(self.__root_node)
 
@@ -100,7 +102,6 @@ class SolverCartpoleMCTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom]
 
     def run_game(self, episodes: int):
         rewards = []
-        moving_average = []
         for e in range(episodes):
             reward_episode = 0
             done = False
@@ -111,18 +112,23 @@ class SolverCartpoleMCTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom]
             print('episode #' + str(e+1))
 
             while not done:
-                root_node, action = self.run_game_iteration(root_node, 50)
+                root_node, action = self.run_game_iteration(root_node, self.iteration_time)
                 observation, reward, terminated, truncated, _ = game.step(action.value)
                 reward_episode += reward
                 done = terminated or truncated
 
                 if done:
                     print('reward ' + str(reward_episode))
+                    rewards.append(reward_episode)
                     game.close()
                     break
             
-            rewards.append(reward)
-            moving_average.append(np.mean(rewards[-100:]))
+            
+        average_reward = sum(rewards) / len(rewards)
+        print('Average Reward: ' + str(average_reward))
+
+        return average_reward
+
     def run_game_iteration(self, node: ActionNode[TState, TAction],iterations:int):
         for i in range(iterations):
             current_node = self.select(node)

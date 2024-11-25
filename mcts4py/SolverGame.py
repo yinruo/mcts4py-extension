@@ -157,7 +157,6 @@ class SolverGame(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generi
 
     def run_game(self, episodes: int):
         rewards = []
-        total_reward = 0
         for e in range(episodes):
             reward_episode = 0
             done = False
@@ -168,7 +167,7 @@ class SolverGame(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generi
             print('episode #' + str(e+1))
 
             while not done : 
-                root_node, action = self.run_game_iteration(root_node, 10)
+                root_node, action = self.run_game_iteration(root_node, 30)
                 print(action.value)
                 observation, reward, terminated, truncated, _ = self.env.step(action.value)
                 reward_episode += reward
@@ -177,11 +176,9 @@ class SolverGame(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generi
                 if done:
                     print('reward ' + str(reward_episode))
                     rewards.append(reward_episode)
-                    total_reward += reward_episode 
                     self.env.close()
                     break
-        average_reward = total_reward / episodes if episodes > 0 else 0
-        return rewards, average_reward
+        return rewards
 
   
 

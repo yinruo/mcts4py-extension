@@ -58,35 +58,6 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         elif self.mdp.option_type == "Call":
             return np.maximum(S - self.mdp.K, 0)
           
-    """ def simulate_gbm(self, S, dt, r, sigma):
-        Z = np.random.normal()
-        return S * np.exp((r - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * Z) """
-
-    """     def simulate_future(self, S):
-        future_price = S
-        current_time = 0
-
-        while current_time < self.mdp.T:
-            future_price = self.simulate_gbm(future_price, self.mdp.dt, self.mdp.r, self.mdp.sigma)
-            current_time += self.mdp.dt
-
-        final_payoff = self.get_payoff(future_price)
-        discounted_payoff = final_payoff * np.exp(-self.mdp.r * self.mdp.T)
-        
-        return discounted_payoff """
-
-    """ def simulate_future(self, S):
-        #if self.mdp.option_type == "Put":
-            #putCall = BlackScholesPut(S = S, K=self.mdp.K, T=self.mdp.T, r=self.mdp.r, sigma= self.mdp.sigma, q=0)
-            #binomial_price = putCall.price() 
-        #else:
-            #callCall = BlackScholesCall(S = S, K=self.mdp.K, T=self.mdp.T, r=self.mdp.r, sigma= self.mdp.sigma, q=0)
-            #binomial_price = callCall.price() 
-        binomial_model = BinomialTreeOption(S, self.mdp.K, self.mdp.r, self.mdp.T, self.mdp.sigma, self.mdp.dt, self.mdp.option_type)
-        binomial_price = binomial_model.price()
-        return binomial_price """
-
-
     def select(self, node: ActionNode[TState, TAction], iteration_number=None) -> ActionNode[TState, TAction]:
         if len(node.children) == 0:
             return node
@@ -137,14 +108,16 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         return new_node
 
     def simulate(self, node: ActionNode[TState, TAction], depth=0) -> float:
+        current_state = node.state
         while True:
             actions = self.mdp.actions(node.state)
             random_action = random.choice(actions)
-            new_state = self.mdp.transition(node.state, random_action)
+            new_state = self.mdp.transition(current_state, random_action)
             if new_state.time_step == self.mdp.T or new_state.is_terminal == True:
                 final_reward = self.get_payoff(new_state.asset_price)
                 node.reward = final_reward
                 break
+            current_state = new_state
             
 
     def backpropagate(self, node: ActionNode[TState, TAction]) -> None:

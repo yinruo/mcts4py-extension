@@ -1,156 +1,142 @@
-""" import gymnasium as gym
-from mcts4py.StatefulSolver import *
-from mcts4py.GenericSolver import GenericSolver
-from samples.option.EUoptionMDP import *
-from samples.option.USoptionMDP import *
-
-EUmdp = EUoptionMDP(S0=100, K=100, r=0.05, T=1, sigma=0.2, n=4)
-USmdp = USoptionMDP(S0=100, K=100, r=0.05, T=1, sigma=0.2, n=4)
-EUsolver = GenericSolver(
-    EUmdp,
-    simulation_depth_limit=100,
-    exploration_constant = 1.0,
-    discount_factor = 0.5,
-    verbose = False)
-
-
-EUsolver.run_search(20)
-print("European option tree:")
-EUsolver.display_tree()
-
-USsolver = GenericSolver(
-    USmdp,
-    simulation_depth_limit=100,
-    exploration_constant = 1.0,
-    discount_factor = 0.5,
-    verbose = False)
-
-USsolver.run_search(20)
-print("American option tree:")
-USsolver.display_tree() """
-
 # Import necessary modules
 from mcts4py.SolverOptionMCTS import SolverOption
+from mcts4py.SolverOptionMENTS import SolverOptionMENTS
+from mcts4py.HindsightSolverOptionMCTS import HindsightSolverOption
 from samples.option.USoptionMDPOG import USoptionMDPOG
 from samples.option.ls.monte_carlo_class import MonteCarloOptionPricing
+from mcts4py.ExpectationSolverOptionMCTS import ExpectationSolverOption
 from tabulate import tabulate
 
-#first set of data
-S0_1 = 1
-K_1=0.9
-T_1=1
-r_1=0
-sigma_1=0.15
-div_yield_1=0
-#second set of data 
-S0_2 = 36
-K_2= 40
-T_2=1
-r_2=0
-sigma_2=0.05
-div_yield_2=0
-# Define the Heston process parameters
-MC = MonteCarloOptionPricing(S0=S0_1,
-                             K=K_1,
-                             T=T_1,
-                             r=r_1,
-                             sigma=sigma_1,
-                             div_yield=div_yield_1,
-                             simulation_rounds=int(10000) ,
-                             no_of_slices=91 ,
-                             # fix_random_seed=True,
-                             fix_random_seed=500)
-MC.cox_ingersoll_ross_model(a=0.5, b=0.05, sigma_r=0.1)  # use Cox Ingersoll Ross (CIR) model
-
-# stochastic volatility (sigma)
-MC.heston(kappa=2, theta=0.3, sigma_v=0.3, rho=0.5)  # heston model
-
-MC.stock_price_simulation()
-ls_value = MC.american_option_longstaff_schwartz(poly_degree=2, option_type="put")
-ls_value_2 = MC.american_option_longstaff_schwartz(poly_degree=2, option_type="call")
-
-mdp_1 = USoptionMDPOG(option_type="Put", S0=S0_1, K=K_1, r=r_1, T=T_1, dt=1/10, sigma=sigma_1)
-US_solver_1 = SolverOption(
-    mdp_1,
-    simulation_depth_limit=100,
-    exploration_constant=1.0,
-    verbose=False
-)
-mcts_price_1 = US_solver_1.run_option()
-
-mdp_2 = USoptionMDPOG(option_type="Call", S0=S0_1, K=K_1, r=r_1, T=T_1, dt=1/10, sigma=sigma_1)
-US_solver_2 = SolverOption(
-    mdp_2,
-    simulation_depth_limit=100,
-    exploration_constant=1.0,
-    verbose=False
-)
-mcts_price_2 = US_solver_2.run_option()
-
-
-MC_2 = MonteCarloOptionPricing(S0=S0_2,
-                             K=K_2,
-                             T=T_2,
-                             r=r_2,
-                             sigma=sigma_2,
-                             div_yield=div_yield_2,
-                             simulation_rounds=int(10000) ,
-                             no_of_slices=91 ,
-                             # fix_random_seed=True,
-                             fix_random_seed=500)
-MC_2.cox_ingersoll_ross_model(a=0.5, b=0.05, sigma_r=0.1)  # use Cox Ingersoll Ross (CIR) model
-
-# stochastic volatility (sigma)
-MC_2.heston(kappa=2, theta=0.3, sigma_v=0.3, rho=0.5)  # heston model
-
-MC_2.stock_price_simulation()
-value_3 = MC_2.american_option_longstaff_schwartz(poly_degree=2, option_type="put")
-value_4 = MC_2.american_option_longstaff_schwartz(poly_degree=2, option_type="call")
-# Define the first put option
-mdp_3 = USoptionMDPOG(option_type="Put", S0=S0_2, K=K_2, r=r_2, T=T_2, dt=1/10, sigma=sigma_2)
-US_solver_3 = SolverOption(
-    mdp_3,
-    simulation_depth_limit=100,
-    exploration_constant=1.0,
-    verbose=False
-)
-mcts_price_3 = US_solver_3.run_option()
-
-mdp_4 = USoptionMDPOG(option_type="Call",  S0=S0_2, K=K_2, r=r_2, T=T_2, dt=1/10, sigma=sigma_2)
-US_solver_4 = SolverOption(
-    mdp_4,
-    simulation_depth_limit=100,
-    exploration_constant=1.0,
-    verbose=False
-)
-mcts_price_4 = US_solver_4.run_option()
-
-# Define the second put option
-""" mdp_4 = USoptionMDPOG(option_type="Put", S0=1, K=0.9, r=0, T=1, dt=1/10, sigma=0.15)
-US_solver_4 = SolverOption(
-    mdp_4,
-    simulation_depth_limit=100,
-    exploration_constant=1.0,
-    verbose=False
-)
-mcts_price_4 = US_solver_2.run_option()
-
-mdp_4 = USoptionMDPOG(option_type="Call", S0=1, K=0.9, r=0, T=1, dt=1/10, sigma=0.15)
-US_solver_4 = SolverOption(
-    mdp_4,
-    simulation_depth_limit=100,
-    exploration_constant=1.0,
-    verbose=False
-)
-mcts_price_4 = US_solver_4.run_option() """
-
-# Prepare data for display
-data = [
-    [S0_1, K_1, 'Put',r_1, sigma_1, T_1, 0.02, ls_value, mcts_price_1],
-    [S0_1, K_1, 'Call',r_1, sigma_1, T_1, 0.012, ls_value_2, mcts_price_2],
-    [S0_2, K_2, 'Put',r_2, sigma_2, T_2, 4.01, value_3, mcts_price_3],
-    [S0_2, K_2, 'Call',r_2, sigma_2, T_2, 0.01, value_4, mcts_price_4]
+# Define data sets with external prices
+data_sets = [
+    {
+        'S0': 1,
+        'K': 0.9,
+        'T': 1,
+        'r': 0,
+        'sigma': 0.15,
+        'div_yield': 0,
+        'external_price_put': 0.02,
+        'external_price_call': 0.012
+    },
+    {
+        'S0': 36,
+        'K': 40,
+        'T': 1,
+        'r': 0,
+        'sigma': 0.05,
+        'div_yield': 0,
+        'external_price_put': 4.01,
+        'external_price_call': 0.01
+    },
+    {
+        'S0': 10,
+        'K': 12,
+        'T': 1,
+        'r': 0.01,
+        'sigma': 0.1,
+        'div_yield': 0,
+        'external_price_put': 2.00,
+        'external_price_call': 0.02
+    },
+    {
+        'S0': 90,
+        'K': 100,
+        'T': 0.5,
+        'r': 0,
+        'sigma': 0.15,
+        'div_yield': 0,
+        'external_price_put': 10.00,
+        'external_price_call': 1.87
+    }
 ]
 
+# Prepare results list
+results = []
+
+# For each data set
+for data_set in data_sets:
+    S0 = data_set['S0']
+    K = data_set['K']
+    T = data_set['T']
+    r = data_set['r']
+    sigma = data_set['sigma']
+    div_yield = data_set['div_yield']
+    external_price_put = data_set['external_price_put']
+    external_price_call = data_set['external_price_call']
+
+    # Create Monte Carlo object
+    MC = MonteCarloOptionPricing(
+        S0=S0,
+        K=K,
+        T=T,
+        r=r,
+        sigma=sigma,
+        div_yield=div_yield,
+        simulation_rounds=10000,
+        no_of_slices=91,
+        fix_random_seed=500
+    )
+    MC.cox_ingersoll_ross_model(a=0.5, b=0.05, sigma_r=0.1)  # CIR model
+    MC.heston(kappa=2, theta=0.3, sigma_v=0.3, rho=0.5)      # Heston model
+    MC.stock_price_simulation()
+
+    # Get LS prices for Put and Call options
+    ls_price_put = MC.american_option_longstaff_schwartz(poly_degree=2, option_type="put")
+    ls_price_call = MC.american_option_longstaff_schwartz(poly_degree=2, option_type="call")
+
+    # For each option type
+    for option_type in ['Put', 'Call']:
+        # Create MDP object
+        mdp = USoptionMDPOG(option_type=option_type, S0=S0, K=K, r=r, T=T, dt=0.1, sigma=sigma)
+
+        # Run SolverOption
+        solver = SolverOption(
+            mdp,
+            simulation_depth_limit=100,
+            exploration_constant=1.0,
+            verbose=False
+        )
+        mcts_price = solver.run_option()
+
+        # Run HindsightSolverOption
+        hindsight_solver = HindsightSolverOption(
+            mdp,
+            simulation_depth_limit=100,
+            exploration_constant=1.0,
+            verbose=False
+        )
+        hindsight_price = hindsight_solver.run_option()
+
+        # Run ExpectationSolverOption
+        expect_solver = ExpectationSolverOption(
+            mdp,
+            simulation_depth_limit=100,
+            exploration_constant=1.0,
+            verbose=False
+        )
+        expect_price = expect_solver.run_option()
+
+        # Get LS price and external price
+        if option_type == 'Put':
+            ls_price = ls_price_put
+            external_price = external_price_put
+        else:
+            ls_price = ls_price_call
+            external_price = external_price_call
+
+        # Prepare data row
+        row = [
+            S0, K, option_type, r, sigma, T,
+            external_price, ls_price, mcts_price,
+            hindsight_price, expect_price
+        ]
+
+        # Append to results
+        results.append(row)
+
 # Display results in a formatted table
-print(tabulate(data, headers=["S0", "K", "Option Type", "Risk-Free Interest Rate","Volatility","Year", "External website", "LS Price", "MCTS Price"], tablefmt="grid"))
+print(tabulate(results, headers=[
+    "S0", "K", "Option Type", "R", "Volatility", "Year", "External Price",
+    "LS Price", "MCTS Price", "Hindsight", "Expectation"
+], tablefmt="grid"))

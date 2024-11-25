@@ -137,7 +137,7 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
 
             softmax_value = self.softmax_value(node.Q_sft)
             inducing_action = node.inducing_action  
-            node = node.parent  # 向上移动到上一级节点
+            node = node.parent 
 
 
 

@@ -1,5 +1,3 @@
-import gymnasium as gym
-from copy import deepcopy
 from mcts4py.SolverGame import *
 from mcts4py.SolverMENTS import *
 from mcts4py.StatefulSolver import *

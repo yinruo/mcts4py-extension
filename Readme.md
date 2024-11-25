@@ -11,9 +11,12 @@ To run samples:
 <!-- - run `python main.py` in the sample directory -->
 
 To run gridworld:
+
 - run `python -m samples.gridworld.main`in the root directory
 
 To run Riverraid: 
+- run `gymnasium[atari]`
+- run `pip install gymnasium[accept-rom-license]`
 - run `python -m samples.Riverraid.main`in the root directory
 
 To run american option pricing : 
