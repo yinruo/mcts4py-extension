@@ -3,7 +3,7 @@ from samples.option.TestUSoptionMDP import TestUSoptionMDP
 
 S0_1 = 1
 K_1=0.9
-T_1=1
+T_1=2
 r_1=0
 sigma_1=0.15
 div_yield_1=0

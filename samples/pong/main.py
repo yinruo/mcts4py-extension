@@ -1,9 +1,10 @@
-from mcts4py.SolverGame import *
+from mcts4py.game.SolverGame import *
+from mcts4py.game.SolverGameSR import *
 from samples.pong.pongMDP import *
-from mcts4py.SolverGameMENTS import *
+from mcts4py.game.SolverGameMENTS import *
 from samples.pong.pongMDP import *
 mdp = pongMDP() 
-""" solverMCTS = SolverGame(
+solverMCTS = SolverGame(
     mdp,
     exploration_constant = 1.0,
     simulation_depth_limit = 100,
@@ -11,9 +12,9 @@ mdp = pongMDP()
     env_name = 'ALE/Riverraid-v5',
     verbose = False)
 
-rewards_mcts = solverMCTS.run_game(5) """
+rewards_mcts = solverMCTS.run_game(5) 
 
-mdp = pongMDP() 
+mdp = pongMDP()
 solverMents = SolverGameMENTS(
     mdp,
     exploration_constant = 1.0,
@@ -26,7 +27,18 @@ solverMents = SolverGameMENTS(
 rewards_ments = solverMents.run_game(5)
 
 
-""" games = list(range(1, 6))
+solverSR = SolverGameSR(
+    mdp,
+    exploration_constant = 1.0,
+    simulation_depth_limit = 100,
+    discount_factor = 0.5,
+    env_name = 'ALE/Riverraid-v5',
+    verbose = False
+)
+rewards_sr = solverSR.run_game(5) 
+
+
+games = list(range(1, 6))
 
 # Plotting the rewards for both MCTS and MENTS
 plt.figure(figsize=(10, 6))
@@ -42,4 +54,4 @@ plt.grid(True)
 plt.legend(fontsize=12)
 
 # Display the plot
-plt.show() """
+plt.show() 

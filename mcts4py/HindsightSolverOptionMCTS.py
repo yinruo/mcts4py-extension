@@ -3,11 +3,11 @@ from mcts4py.Types import *
 from mcts4py.Solver import *
 from mcts4py.MDP import *
 import gymnasium as gym
-from samples.option.USoptionMDPOG import USoptionAction, USoptionState
+from samples.option.USoptionMDP import USoptionAction, USoptionState
 import matplotlib.pyplot as plt
 from longstaff_schwartz.algorithm import longstaff_schwartz
 from longstaff_schwartz.stochastic_process import GeometricBrownianMotion
-from samples.option.bino import BinomialTreeOption
+from samples.option.test.bino import BinomialTreeOption
 from blackscholes import BlackScholesPut, BlackScholesCall
 class HindsightSolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generic[TState, TAction, TRandom]):
 

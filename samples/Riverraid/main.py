@@ -1,5 +1,5 @@
-from mcts4py.SolverGame import *
-from mcts4py.SolverMENTS import *
+from mcts4py.game.SolverGame import *
+from mcts4py.game.SolverGameMENTS import *
 from mcts4py.StatefulSolver import *
 from mcts4py.GenericSolver import GenericSolver
 from samples.Riverraid.RiverraidMDP import *
@@ -21,9 +21,8 @@ mdp = gameMDP()
 rewards_mcts, average_mcts = solverMCTS.run_game(5)
 rewards_random, average_random = solverMCTS.run_random_game(5) """
 
-solverMENTS = SolverMENTS(
+solverMENTS = SolverGameMENTS(
     mdp,
-    simulation_depth_limit = 100,
     exploration_constant = 1,
     discount_factor = 0.9,
     temperature = 1,

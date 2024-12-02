@@ -1,11 +1,11 @@
 import gymnasium as gym
 from copy import deepcopy
-from mcts4py.SolverCartpole import *
+from mcts4py.game.SolverCartpole import *
 from mcts4py.StatefulSolver import *
 from mcts4py.GenericSolver import GenericSolver
 from samples.cartpole.cartpoleMDP import *
-from mcts4py.SolverCartpoleMCTS import *
-from mcts4py.SolverCartpoleMents import *
+from mcts4py.game.SolverCartpoleMCTS import *
+from mcts4py.game.SolverCartpoleMents import *
 import matplotlib.pyplot as plt
 
 

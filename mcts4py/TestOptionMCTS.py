@@ -7,7 +7,7 @@ from samples.option.TestUSoptionMDP import TestUSoptionAction
 import matplotlib.pyplot as plt
 from longstaff_schwartz.algorithm import longstaff_schwartz
 from mcts4py.SolverOptionMCTS import SolverOption
-from samples.option.USoptionMDPOG import USoptionMDPOG
+from samples.option.USoptionMDP import USoptionMDPOG
 class TestOptionMCTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generic[TState, TAction, TRandom]):
 
     def __init__(self,

@@ -35,6 +35,7 @@ class SolverGameSR(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         current_node = node
         self.simulate_action(node)
 
+
         while True:
             # If the node is terminal, return it
             if self.mdp.is_terminal(current_node.state):
@@ -46,9 +47,18 @@ class SolverGameSR(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
             # This state has not been fully explored, return it
             if len(set(current_node.valid_actions) - explored_actions) > 0:
                 return current_node
+            
+            if current_node.parent is None:  
+                # 1/2-greedy strategy: with 50% probability, choose the current best action
+                if random.random() < 0.5:
+                    current_node = max(current_children, key=lambda c: c.reward / c.n if c.n > 0 else float('-inf'))
+                else:
+                # Randomly select any child node
+                    current_node = random.choice(current_children)
+            else:
 
             # This state has been explored, select best action
-            current_node = max(current_children, key=lambda c: self.calculate_uct(c))
+                current_node = max(current_children, key=lambda c: self.calculate_uct(c))
             self.simulate_action(current_node)
 
     def expand(self, node: ActionNode[TState, TAction], iteration_number=None) -> ActionNode[TState, TAction]:
@@ -72,13 +82,10 @@ class SolverGameSR(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
 
     def simulate(self, node: ActionNode[TState, TAction], depth=0) -> float:
         self.env.unwrapped.restore_state(node.state.current_state)
+        valid_actions = self.mdp.actions()
         total_reward = 0
         done = False
         while not done:
-            if node.parent == None:
-                valid_actions = self.mdp.actions()
-                #if random.random() < 0.5:
-
             random_action = random.choice(valid_actions)
             observation, reward, terminated, truncated, _ = self.env.step(random_action.value)
             done = terminated or truncated

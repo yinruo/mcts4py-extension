@@ -2,10 +2,11 @@
 from mcts4py.SolverOptionMCTS import SolverOption
 from mcts4py.SolverOptionMENTS import SolverOptionMENTS
 from mcts4py.HindsightSolverOptionMCTS import HindsightSolverOption
-from samples.option.USoptionMDPOG import USoptionMDPOG
+from samples.option.USoptionMDP import USoptionMDPOG
 from samples.option.ls.monte_carlo_class import MonteCarloOptionPricing
 from mcts4py.ExpectationSolverOptionMCTS import ExpectationSolverOption
 from tabulate import tabulate
+import numpy as np
 
 # Define data sets with external prices
 data_sets = [
@@ -75,7 +76,7 @@ for data_set in data_sets:
         div_yield=div_yield,
         simulation_rounds=10000,
         no_of_slices=91,
-        fix_random_seed=500
+        fix_random_seed=np.random.randint(1, 10000)
     )
     MC.cox_ingersoll_ross_model(a=0.5, b=0.05, sigma_r=0.1)  # CIR model
     MC.heston(kappa=2, theta=0.3, sigma_v=0.3, rho=0.5)      # Heston model
@@ -140,3 +141,7 @@ print(tabulate(results, headers=[
     "S0", "K", "Option Type", "R", "Volatility", "Year", "External Price",
     "LS Price", "MCTS Price", "Hindsight", "Expectation"
 ], tablefmt="grid"))
+
+
+
+
