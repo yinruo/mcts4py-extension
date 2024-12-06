@@ -2,6 +2,7 @@
 from mcts4py.SolverOptionMCTS import SolverOption
 from mcts4py.SolverOptionMENTS import SolverOptionMENTS
 from mcts4py.HindsightSolverOptionMCTS import HindsightSolverOption
+from mcts4py.TestSolverOptionMCTS import TestSolverOption
 from samples.option.USoptionMDP import USoptionMDP
 from samples.option.ls.monte_carlo_class import MonteCarloOptionPricing
 from mcts4py.ExpectationSolverOptionMCTS import ExpectationSolverOption
@@ -110,7 +111,7 @@ for data_set in data_sets:
         hindsight_price = hindsight_solver.run_option()
 
         # Run ExpectationSolverOption
-        expect_solver = ExpectationSolverOption(
+        expect_solver = TestSolverOption(
             mdp,
             simulation_depth_limit=100,
             exploration_constant=1.0,
@@ -128,7 +129,6 @@ for data_set in data_sets:
 
         # Prepare data row
         row = [
-            S0, K, option_type, r, sigma, T,
             external_price, ls_price, mcts_price,
             hindsight_price, expect_price
         ]
@@ -138,8 +138,8 @@ for data_set in data_sets:
 
 # Display results in a formatted table
 print(tabulate(results, headers=[
-    "S0", "K", "Option Type", "R", "Volatility", "Year", "External Price",
-    "LS Price", "MCTS Price", "Hindsight", "Expectation"
+     "External Price",
+    "LS Price", "MCTS", "Hindsight", "MCTS Vanilla"
 ], tablefmt="grid"))
 
 

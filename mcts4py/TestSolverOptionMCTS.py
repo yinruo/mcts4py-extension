@@ -9,7 +9,7 @@ from longstaff_schwartz.algorithm import longstaff_schwartz
 from longstaff_schwartz.stochastic_process import GeometricBrownianMotion
 from samples.option.test.bino import BinomialTreeOption
 from blackscholes import BlackScholesPut, BlackScholesCall
-class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generic[TState, TAction, TRandom]):
+class TestSolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generic[TState, TAction, TRandom]):
 
     def __init__(self,
                  mdp: MDP[TState, TAction],
@@ -77,21 +77,15 @@ class SolverOption(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
             if len(set(current_node.valid_actions) - explored_actions) > 0:
                 return current_node
             
-            #exercise_children = [child for child in current_children if child.inducing_action == USoptionAction.UP_EXERCISE or child.inducing_action == USoptionAction.DOWN_EXERCISE]
-            #non_exercise_children = [child for child in current_children if child not in exercise_children]
+            exercise_children = [child for child in current_children if child.inducing_action == USoptionAction.UP_EXERCISE or child.inducing_action == USoptionAction.DOWN_EXERCISE]
+            non_exercise_children = [child for child in current_children if child not in exercise_children]
 
-            #if non_exercise_children:
+            if non_exercise_children:
                 #current_node = random.choice(non_exercise_children)
-            #else:
-                #print("No non-exercise children available")
-            hold_children = [child for child in current_children if child.inducing_action == USoptionAction.UP_HOLD or child.inducing_action == USoptionAction.DOWN_HOLD]
-            if hold_children:
-                if random.random() < self.mdp.p:
-                    selected_children = [child for child in hold_children if child.inducing_action == USoptionAction.UP_HOLD]
-                else:
-                    selected_children = [child for child in hold_children if child.inducing_action == USoptionAction.DOWN_HOLD]
-                if selected_children:
-                    current_node = random.choice(selected_children)
+                current_node = max(non_exercise_children, key=lambda c: self.calculate_uct(c))
+            else:
+                print("No non-exercise children available")
+
             self.simulate_action(current_node)
 
 
