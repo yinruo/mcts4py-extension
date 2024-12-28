@@ -164,15 +164,15 @@ class MonteCarloOptionPricing:
         self.terminal_prices = self.price_array[:, -1]
         self.stock_price_expectation = np.average(self.terminal_prices)
 
-        print('-' * 64)
-        print(
-            " Number of simulations %4.1i \n S0 %4.1f \n K %2.1f \n Maximum Stock price %4.2f \n"
-            " Minimum Stock price %4.2f \n Average stock price %4.3f " % (
-                self.simulation_rounds, self.S0, self.K, np.max(self.terminal_prices),
-                np.min(self.terminal_prices), self.stock_price_expectation
-            )
-        )
-        print('-' * 64)
+        #print('-' * 64)
+        #print(
+        #    " Number of simulations %4.1i \n S0 %4.1f \n K %2.1f \n Maximum Stock price %4.2f \n"
+        #    " Minimum Stock price %4.2f \n Average stock price %4.3f " % (
+        #        self.simulation_rounds, self.S0, self.K, np.max(self.terminal_prices),
+        #        np.min(self.terminal_prices), self.stock_price_expectation
+        #    )
+        #)
+        #print('-' * 64)
 
         return self.stock_price_expectation
 
@@ -219,15 +219,15 @@ class MonteCarloOptionPricing:
         self.terminal_prices = self.price_array[:, -1]
         self.stock_price_expectation = np.average(self.terminal_prices)
 
-        print('-' * 64)
-        print(
-            " Number of simulations %4.1i \n S0 %4.1f \n K %2.1f \n Maximum Stock price %4.2f \n"
-            " Minimum Stock price %4.2f \n Average stock price %4.3f " % (
-                self.simulation_rounds, self.S0, self.K, np.max(self.terminal_prices),
-                np.min(self.terminal_prices), self.stock_price_expectation
-            )
-        )
-        print('-' * 64)
+        #print('-' * 64)
+        #print(
+        #    " Number of simulations %4.1i \n S0 %4.1f \n K %2.1f \n Maximum Stock price %4.2f \n"
+        #    " Minimum Stock price %4.2f \n Average stock price %4.3f " % (
+        #        self.simulation_rounds, self.S0, self.K, np.max(self.terminal_prices),
+        #        np.min(self.terminal_prices), self.stock_price_expectation
+        #    )
+        #)
+        #print('-' * 64)
 
         return self.stock_price_expectation
 
@@ -238,14 +238,14 @@ class MonteCarloOptionPricing:
 
         self.expectation = np.average(self.terminal_profit * np.exp(-np.sum(self.r, axis=1)))
 
-        print('-' * 64)
-        print(
-            " European call monte carlo \n S0 %4.1f \n K %2.1f \n"
-            " Call Option Value %4.3f \n " % (
-                self.S0, self.K, self.expectation
-            )
-        )
-        print('-' * 64)
+        #print('-' * 64)
+        #print(
+        #    " European call monte carlo \n S0 %4.1f \n K %2.1f \n"
+        #    " Call Option Value %4.3f \n " % (
+        #        self.S0, self.K, self.expectation
+        #     )
+        #)
+        #print('-' * 64)
 
         return self.expectation
 
@@ -284,14 +284,14 @@ class MonteCarloOptionPricing:
 
         self.standard_error = np.std(self.terminal_profit) / np.sqrt(len(self.terminal_profit))
 
-        print('-' * 64)
-        print(
-            " Asian %s monte carlo arithmetic average \n S0 %4.1f \n K %2.1f \n"
-            " Option Value %4.3f" % (
-                option_type, self.S0, self.K, self.expectation
-            )
-        )
-        print('-' * 64)
+        #print('-' * 64)
+        #print(
+        #    " Asian %s monte carlo arithmetic average \n S0 %4.1f \n K %2.1f \n"
+        #    " Option Value %4.3f" % (
+        #        option_type, self.S0, self.K, self.expectation
+        #    )
+        #)
+        #print('-' * 64)
 
         return self.expectation
 
@@ -346,15 +346,15 @@ class MonteCarloOptionPricing:
         simulation_vals = (self.intrinsic_val * stopping_rule * self.discount_table).sum(axis=1)
         self.expectation = np.average(simulation_vals)
 
-        print('-' * 64)
-        print(
-            " American %s Longstaff-Schwartz method (assume polynomial fit)"
-            " \n polynomial degree = %i \n S0 %4.1f \n K %2.1f \n"
-            " Option Value %4.3f " % (
-                option_type, poly_degree, self.S0, self.K, self.expectation
-            )
-        )
-        print('-' * 64)
+        #print('-' * 64)
+        #print(
+        #    " American %s Longstaff-Schwartz method (assume polynomial fit)"
+        #    " \n polynomial degree = %i \n S0 %4.1f \n K %2.1f \n"
+        #   " Option Value %4.3f " % (
+        #        option_type, poly_degree, self.S0, self.K, self.expectation
+        #    )
+        #)
+        #print('-' * 64)
 
         return self.expectation
 
@@ -403,15 +403,15 @@ class MonteCarloOptionPricing:
 
         self.expectation = np.average(self.terminal_profit * np.exp(-np.sum(self.r, axis=1)))
 
-        print('-' * 64)
-        print(
-            " Barrier european %s \n Type: %s \n Direction: %s @ %s \n S0 %4.1f \n K %2.1f \n"
-            " Option Value %4.3f" % (
-                option_type, barrier_type, barrier_direction, barrier_price,
-                self.S0, self.K, self.expectation
-            )
-        )
-        print('-' * 64)
+        #print('-' * 64)
+        #print(
+        #    " Barrier european %s \n Type: %s \n Direction: %s @ %s \n S0 %4.1f \n K %2.1f \n"
+        #    " Option Value %4.3f" % (
+        #        option_type, barrier_type, barrier_direction, barrier_price,
+        #        self.S0, self.K, self.expectation
+        #    )
+        #)
+        #print('-' * 64)
 
         return self.expectation
 
@@ -430,12 +430,12 @@ class MonteCarloOptionPricing:
         self.expectation = np.average(self.terminal_profit * np.exp(-np.sum(self.r, axis=1)))
         self.standard_error = np.std(self.terminal_profit) / np.sqrt(len(self.terminal_profit))
 
-        print('-' * 64)
-        print(
-            " Lookback european %s monte carlo \n S0 %4.1f \n K %2.1f \n"
-            " Option Value %4.3f " % (
-                option_type, self.S0, self.K, self.expectation
-            )
-        )
-        print('-' * 64)
+        #print('-' * 64)
+        #print(
+        #    " Lookback european %s monte carlo \n S0 %4.1f \n K %2.1f \n"
+        #    " Option Value %4.3f " % (
+        #       option_type, self.S0, self.K, self.expectation
+        #    )
+        #)
+        #print('-' * 64)
         return self.expectation

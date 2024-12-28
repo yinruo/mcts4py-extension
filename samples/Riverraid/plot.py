@@ -2,10 +2,10 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-from samples.Riverraid.gameMDP import *
-from mcts4py.game.SolverGame import *
-from mcts4py.game.SolverGameMENTS import *
-from mcts4py.game.SolverGameSR import *
+from samples.Riverraid.RiverraidMDP import *
+from samples.Riverraid.GameSolver import *
+from samples.Riverraid.GameSolverMENTS import *
+from samples.Riverraid.GameSolverSR import *
 
 num_runs = 5
 
@@ -14,9 +14,9 @@ results_dict = {
     "1/2-greedy + UCT MCTS": [],
     "MENTS": [],
 }
-mdp = gameMDP() 
+mdp = RiverraidMDP() 
 
-solverMCTS = SolverGame(
+solverMCTS = GameSolver(
         mdp,
         exploration_constant = 1.0,
         simulation_depth_limit = 100,
@@ -25,7 +25,7 @@ solverMCTS = SolverGame(
         verbose = False)
 results_dict["Vanilla MCTS"] = solverMCTS.run_game(num_runs)
 
-solverMents = SolverGameMENTS(
+solverMents = GameSolverMENTS(
     mdp,
     exploration_constant = 1.0,
     discount_factor = 1,
@@ -36,7 +36,7 @@ solverMents = SolverGameMENTS(
 
 results_dict["MENTS"] = solverMents.run_game(num_runs)
 
-solverSR = SolverGameSR(
+solverSR = GameSolverSR(
     mdp,
     exploration_constant = 1.0,
     simulation_depth_limit = 100,

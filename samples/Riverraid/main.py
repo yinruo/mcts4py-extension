@@ -1,15 +1,13 @@
-from mcts4py.game.SolverGame import *
-from mcts4py.game.SolverGameMENTS import *
+from samples.Riverraid.GameSolver import *
+from samples.Riverraid.GameSolverMENTS import *
 from mcts4py.StatefulSolver import *
-from mcts4py.GenericSolver import GenericSolver
 from samples.Riverraid.RiverraidMDP import *
-from samples.Riverraid.gameMDP import *
 import matplotlib.pyplot as plt
 
-""" mdp = RiverraidMDP() """
-mdp = gameMDP() 
 
-""" solverMCTS = SolverGame(
+mdp = RiverraidMDP() 
+
+solverMCTS = GameSolver(
     mdp,
     exploration_constant = 1.0,
     simulation_depth_limit = 100,
@@ -19,9 +17,9 @@ mdp = gameMDP()
 
 
 rewards_mcts, average_mcts = solverMCTS.run_game(5)
-rewards_random, average_random = solverMCTS.run_random_game(5) """
+rewards_random, average_random = solverMCTS.run_random_game(5)
 
-solverMENTS = SolverGameMENTS(
+solverMENTS = GameSolverMENTS(
     mdp,
     exploration_constant = 1,
     discount_factor = 0.9,
@@ -31,7 +29,7 @@ solverMENTS = SolverGameMENTS(
     verbose = False)
 
 
-rewards_ments, average_ments = solverMENTS.run_game(5)  
+rewards_ments, average_ments = solverMENTS.run_game(5) 
 
 
 """ max_mcts = max(rewards_mcts)

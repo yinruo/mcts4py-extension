@@ -6,7 +6,7 @@ import gymnasium as gym
 from copy import deepcopy
 import time
 
-class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generic[TState, TAction, TRandom]):
+class CartpoleSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generic[TState, TAction, TRandom]):
 
     def __init__(self,
                  mdp: MDP[TState, TAction],
@@ -192,7 +192,7 @@ class SolverCartpoleMents(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
             print('episode #' + str(e+1))
 
             while not done:
-                root_node, action = self.run_game_iteration(root_node,30)
+                root_node, action = self.run_game_iteration(root_node,100)
                 observation, reward, terminated, truncated, _ = game.step(action.value)
                 reward_episode += reward
                 done = terminated or truncated

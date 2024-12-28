@@ -1,32 +1,33 @@
-import gymnasium as gym
-from copy import deepcopy
-from mcts4py.game.SolverCartpole import *
-from mcts4py.StatefulSolver import *
-from mcts4py.GenericSolver import GenericSolver
+from samples.cartpole.CartpoleSolver import *
 from samples.cartpole.cartpoleMDP import *
-from mcts4py.game.SolverCartpoleMCTS import *
-from mcts4py.game.SolverCartpoleMents import *
+from samples.cartpole.CartpoleSolverMENTS import *
 import matplotlib.pyplot as plt
 
 
 mdp = cartpoleMDP()
 
-""" solver = SolverCartpole(
-    mdp,
-    exploration_constant = 1.0,
-    discount_factor = 0.9,
-    env_name = "CartPole-v1",
-    verbose = True) """
-
-
-""" solver = SolverCartpoleMCTS(
+solver_mcts = CartpoleSolver(
     mdp,
     exploration_constant = 1.0,
     discount_factor = 1,
     env_name = "CartPole-v1",
-    verbose = True) """
+    iteration_time = 100,
+    verbose = True)
 
-mean_rewards = []
+solver_mcts.run_game(10)
+
+solver_mcts = CartpoleSolverMENTS(
+    mdp,
+    exploration_constant = 1.0,
+    discount_factor = 1,
+    env_name = "CartPole-v1",
+    temperature = 1,
+    epsilon = 0.1,
+    verbose = False)
+
+solver_mcts.run_game(10)
+
+""" mean_rewards = []
 iterations = range(3, 30)
 
 for i in iterations:
@@ -53,4 +54,4 @@ plt.xlabel("Iteration Time (i)", fontsize=14)
 plt.ylabel("Mean Reward", fontsize=14)
 plt.grid(True)
 plt.legend()
-plt.show()
+plt.show() """
