@@ -95,7 +95,7 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         root_node = MENTSNode[TState, TAction](None, None)
         self.simulate_action(root_node)
         while True:    
-            root_node,action,rewards = self.run_iteration(root_node, 100)
+            root_node,action,rewards = self.run_iteration(root_node, 200)
             if action == USoptionAction.EXERCISE:
                 final_node = root_node.parent
                 intrinsic_value = self.get_intrinsic_value(final_node.state.asset_price)
@@ -115,7 +115,7 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         self.simulate_action(root_node)
         current_node = root_node
         while True:    
-            new_node,action,rewards = self.run_iteration_hindsight(current_node, 100)
+            new_node,action,rewards = self.run_iteration_hindsight(current_node, 200)
             #self.print_asset_price_tree(root_node)
             #new_node = MENTSNode(current_node, action)
             #current_node.add_child(new_node)
@@ -193,14 +193,26 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
 
         if self.mdp.is_terminal(node.state):
             raise ValueError("Option has ended")
+        
+        soft_indmax_probs = self.soft_indmax(node.Q_sft)
+        #print(soft_indmax_probs)
+        index_of_better_value = np.argmax(soft_indmax_probs)
+        #print(index_of_better_value)
 
-        children = node.children
-        max_n = max(node.n for node in children)
+        best_child = None
+        for child in node.children:
+            if child.inducing_action.value == index_of_better_value:
+                best_child = child
+                break
 
-        best_children = [c for c in children if c.n == max_n]
-        best_child = random.choice(best_children)
+        #children = node.children
+        #max_n = max(node.n for node in children)
+
+        #best_children = [c for c in children if c.n == max_n]
+        #best_child = random.choice(best_children)
 
         return best_child, best_child.inducing_action
+    
 
     def select(self, node: MENTSNode[TState, TAction], iteration_number=None) -> MENTSNode[TState, TAction]:
         if len(node.children) == 0:
@@ -276,6 +288,8 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
     def backpropagate(self, node: MENTSNode[TState, TAction],action, reward: float) -> None:
         node.visits[action.value] += 1
         node.Q_sft[action.value] = node.action_reward[action.value] + reward
+        node.reward += node.Q_sft[action.value]
+        print("reward:", node.reward)
         softmax_value = self.softmax_value(node.Q_sft)
         inducing_action = node.inducing_action 
         node = node.parent 
@@ -283,7 +297,8 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         while node:
             node.visits[inducing_action.value] += 1
             node.Q_sft[inducing_action.value] = node.action_reward[inducing_action.value] + softmax_value
-            
+            node.reward += node.Q_sft[action.value]
+            print("reward:", node.reward)
             if self.verbose:
                 print("softmax value:", softmax_value)
                 print("Q_sft:", node.Q_sft)
@@ -291,5 +306,18 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             softmax_value = self.softmax_value(node.Q_sft)
             inducing_action = node.inducing_action  
             node = node.parent 
+
+
+    def get_root_rewards(self):
+        root_node = MENTSNode[TState, TAction](None, None)
+        self.simulate_action(root_node)
+        _,_, root_rewards = self.run_iteration(root_node, 200)
+        return root_rewards
+    
+    def get_root_rewards_hindsight(self):
+        root_node = MENTSNode[TState, TAction](None, None)
+        self.simulate_action(root_node)
+        _,_, root_rewards = self.run_iteration_hindsight(root_node, 200)
+        return root_rewards
             
             

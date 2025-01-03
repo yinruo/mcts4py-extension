@@ -8,11 +8,11 @@ from samples.option.OptionSolverMENTS import OptionSolverMENTS
 from samples.option.MENTS.SolverMents import StatefulSolverMENTS
 import numpy as np
 
-S0 = 100
-K = 90
+S0 = 40
+K = 36
 T = 1
-r = 0.05
-sigma = 0.3
+r = 0.15
+sigma = 0.2
 dt = 1/10
 div_yield = 0
 simulation_depth_limit = 100
@@ -25,10 +25,10 @@ results_dict = {
     "LS": [],
     "UCT": [],
     "UCT VC": [],
-    #"MENTS":[],
-    #"MENTS VC":[],
-    "MENTS_2":[],
-    "MENTS_2 VC": []
+    "MENTS":[],
+    "MENTS VC":[],
+    #"MENTS_2":[],
+    #"MENTS_2 VC": []
 
 }
 mdp = USoptionMDP(option_type="Call", S0=S0, K=K, r=r, T=T, dt=dt, sigma=sigma)
@@ -76,15 +76,15 @@ for _ in range(num_runs):
     results_dict["UCT"].append(UCT_reward)
     hindsight_reward =  US_solver.run_option_hindsight()
     results_dict["UCT VC"].append(hindsight_reward)
-    #reward_ments = ments_solver.run_option()
-    #results_dict["MENTS"].append(reward_ments)
-    #reward_ments_vc = ments_solver.run_option_hindsight()
-    #results_dict["MENTS VC"].append(reward_ments_vc)
-    reward_m2 = ments_solver_2.run_option()
-    results_dict["MENTS_2"].append(reward_m2)
-    reward_ments_2_vc = ments_solver_2.run_option_hindsight()
+    reward_ments = ments_solver.run_option()
+    results_dict["MENTS"].append(reward_ments)
+    reward_ments_vc = ments_solver.run_option_hindsight()
+    results_dict["MENTS VC"].append(reward_ments_vc)
+    #reward_m2 = ments_solver_2.run_option()
+    #results_dict["MENTS_2"].append(reward_m2)
+    #reward_ments_2_vc = ments_solver_2.run_option_hindsight()
     #print("reward for ments vc",reward_ments_2_vc)
-    results_dict["MENTS_2 VC"].append(reward_ments_2_vc)
+    #results_dict["MENTS_2 VC"].append(reward_ments_2_vc)
 
     MC.cox_ingersoll_ross_model(a=0.5, b=0.05, sigma_r=0.1)  # CIR model
     MC.heston(kappa=2, theta=0.3, sigma_v=0.3, rho=0.5)      # Heston model

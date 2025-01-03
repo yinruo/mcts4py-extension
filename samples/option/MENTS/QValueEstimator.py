@@ -6,8 +6,8 @@ import math
 
 LAMBDA_MENTS_DECAY_RATE = 10.5
 ACTION_SPACE_SIZE = 200
-DISCOUNT_FACTOR = 0.6
-MENTS_ALPHA = 0.1
+DISCOUNT_FACTOR = 0.9
+MENTS_ALPHA = 0.5
 class StateValueNetwork(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(StateValueNetwork, self).__init__()
