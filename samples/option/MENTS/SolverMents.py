@@ -70,13 +70,13 @@ class StatefulSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
                 #print("root_node asset price, ",root_node.state.asset_price)
                 final_node = new_node.parent
                 #print("final node asset price",final_node.state.asset_price)
-                intrinsic_value = self.get_intrinsic_value(final_node.state.asset_price)
+                intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
                 #if self.verbose:
                 #    print("the final reward is", intrinsic_value)
                 return intrinsic_value
                 #print("the action is hold")
             if new_node.state.time_step == self.mdp.T:
-                intrinsic_value = self.get_intrinsic_value(new_node.state.asset_price)
+                intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
                 if self.verbose:
                     print("the final reward is", intrinsic_value)
                 return intrinsic_value
@@ -104,12 +104,12 @@ class StatefulSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
             if action_taken == USoptionAction.EXERCISE:
                 final_node = new_node.parent
                 #print("the parent node of transitioned node", final_node.state.asset_price)
-                intrinsic_value = self.get_intrinsic_value(final_node.state.asset_price)
+                intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
                 if self.verbose:
                     print("the final reward is", intrinsic_value)
                 return intrinsic_value
             if new_node.state.time_step == self.mdp.T:
-                intrinsic_value = self.get_intrinsic_value(new_node.state.asset_price)
+                intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
                 if self.verbose:
                     print("the final reward is", intrinsic_value)
                 return intrinsic_value
@@ -220,7 +220,7 @@ class StatefulSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
         valid_actions = node.valid_actions
         if node.inducing_action == USoptionAction.EXERCISE:
             node = node.parent
-            intrinsic_value = self.get_intrinsic_value(node.state.asset_price)
+            intrinsic_value = self.mdp.get_intrinsic_value(node.state.asset_price)
             return intrinsic_value
         else:
             current_state = node.state
@@ -228,10 +228,10 @@ class StatefulSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
                 random_action = random.choice(valid_actions)
                 new_state = self.mdp.transition(current_state, random_action)
                 if random_action == USoptionAction.EXERCISE:
-                    intrinsic_value = self.get_intrinsic_value(current_state.asset_price)
+                    intrinsic_value = self.mdp.get_intrinsic_value(current_state.asset_price)
                     return intrinsic_value
                 if new_state.time_step == self.mdp.T or new_state.is_terminal == True:
-                    intrinsic_value = self.get_intrinsic_value(new_state.asset_price)
+                    intrinsic_value = self.mdp.get_intrinsic_value(new_state.asset_price)
                     return intrinsic_value
                 current_state = new_state
 
@@ -248,7 +248,7 @@ class StatefulSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom
 
         intrinsic_values = []
         for asset_price in asset_prices:
-            intrinsic_value = self.get_intrinsic_value(asset_price)
+            intrinsic_value = self.mdp.get_intrinsic_value(asset_price)
             intrinsic_values.append(intrinsic_value)
         max_payoff = max(intrinsic_values)
         if self.verbose:

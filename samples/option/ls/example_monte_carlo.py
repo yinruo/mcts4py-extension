@@ -1,11 +1,11 @@
 from samples.option.ls.monte_carlo_class import MonteCarloOptionPricing
 
 # initialize parameters
-S0 = 1 # e.g. spot price = 35
-K = 0.9  # e.g. exercise price = 40
+S0 = 100 # e.g. spot price = 35
+K = 85  # e.g. exercise price = 40
 T = 1  # e.g. one year
-r = 0  # e.g. risk free rate = 1%
-sigma = 0.15  # e.g. volatility = 5%
+r = 0.1  # e.g. risk free rate = 1%
+sigma = 0.2  # e.g. volatility = 5%
 div_yield = 0.0  # e.g. dividend yield = 1%
 no_of_slice = 91  # no. of slices PER YEAR e.g. quarterly adjusted or 252 trading days adjusted
 
@@ -38,7 +38,8 @@ MC.stock_price_simulation()
 # MT.stock_price_simulation_with_poisson_jump(jump_alpha=0.1, jump_std=0.25, poisson_lambda=0)
 MC.european_call()
 # MC.asian_avg_price_option(avg_method='arithmetic', option_type="call")
-MC.american_option_longstaff_schwartz(poly_degree=2, option_type="put")
+price = MC.american_option_longstaff_schwartz(poly_degree=2, option_type="put")
+print("LSM price", price)
 # MC.barrier_option(option_type="call",
 #                   barrier_price=barrier_price,
 #                   barrier_type="knock-in",

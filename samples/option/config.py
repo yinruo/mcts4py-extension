@@ -1,0 +1,12 @@
+S0 = 12
+K = 10
+T = 1
+r = 0.1
+sigma = 0.2
+dt = 1/10
+div_yield = 0.03
+q = 0
+simulation_depth_limit = 100
+exploration_constant = 1.0
+num_runs = 100
+option_type = "call"

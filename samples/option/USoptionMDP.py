@@ -25,7 +25,8 @@ class USoptionMDP(MDP[USoptionAction, USoptionState]):
                  r: float,  
                  T: float,   
                  dt: float,
-                 sigma: float
+                 sigma: float,
+                 q: float
                  ): 
         self.option_type = option_type   
         self.S0 = S0
@@ -34,13 +35,23 @@ class USoptionMDP(MDP[USoptionAction, USoptionState]):
         self.T = T
         self.dt = dt
         self.sigma = sigma 
+        self.q = q
         self.u = np.exp(sigma * np.sqrt(self.dt)) 
         self.d = 1 / self.u  
-        self.p = (np.exp(r * self.dt) - self.d) / (self.u - self.d)  
+        self.p = ( math.exp( (self.r - self.q) * self.dt ) - self.d ) / ( self.u - self.d )
+        
 
-    def simulate_gbm(self, S, dt, r, sigma):
+    def get_intrinsic_value(self, S):
+        if self.option_type == "put":
+            return np.maximum(self.K - S, 0)  
+        elif self.option_type == "call":
+            return np.maximum(S - self.K, 0) 
+        else:
+            print("option type unknown")
+
+    def simulate_gbm(self, S, dt, r, sigma, q):
         Z = np.random.normal()
-        return S * np.exp((r - 0.5 * sigma ** 2) * dt + sigma * math.sqrt(dt) * Z)
+        return S * np.exp((r - q  - 0.5 * sigma ** 2) * dt + sigma * math.sqrt(dt) * Z)
 
     def initial_state(self) -> USoptionState:
         return USoptionState(time_step=0, asset_price=self.S0, is_terminal=False)
@@ -65,7 +76,7 @@ class USoptionMDP(MDP[USoptionAction, USoptionState]):
             #new_price = state.asset_price * self.u  
         #else:
             #new_price = state.asset_price * self.d 
-        new_price = self.simulate_gbm(state.asset_price, self.dt, self.r, self.sigma)
+        new_price = self.simulate_gbm(state.asset_price, self.dt, self.r, self.sigma,self.q)
         #print("new price:",new_price)
         new_time_step = round(state.time_step + self.dt, 3) 
         if state.time_step + self.dt == self.T or action == USoptionAction.EXERCISE:
