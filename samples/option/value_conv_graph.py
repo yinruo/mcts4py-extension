@@ -2,9 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import samples.option.config as config  # Import configuration file
-
+from samples.option.value_conv import config_name
 # Load the data from the CSV file
-input_file = "samples/option/output_value_conv/value_convergence_config_b.csv"
+input_file = f"samples/option/output_value_conv/value_convergence_config_{config_name}.csv"
 df = pd.read_csv(input_file)
 
 # Extract data for plotting
@@ -30,7 +30,7 @@ ax.fill_between(iterations, np.maximum(mean_2 - std_2, 0), mean_2 + std_2, color
 # Labels and titles
 ax.set_xlabel(config.x_label if hasattr(config, "x_label") else "MC Iteration")
 ax.set_ylabel(config.y_label if hasattr(config, "y_label") else "Root Node State Value (log)")
-ax.set_title(config.plot_title if hasattr(config, "plot_title") else "Value Convergence - Config E")
+ax.set_title(config.plot_title if hasattr(config, "plot_title") else f"Value Convergence - Config {config_name}")
 ax.legend()
 
 # Add grid and show plot

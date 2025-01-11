@@ -5,15 +5,23 @@ import numpy as np
 import samples.option.config as config
 import pandas as pd
 
+config_name = "F"
+params = config.configurations[config_name]
 
-
-mdp = USoptionMDP(option_type=config.option_type, S0=config.S0, K=config.K, r=config.r, T=config.T, dt=config.dt, sigma=config.sigma, q=config.q)
+mdp = USoptionMDP(option_type=params["option_type"], 
+                  S0=params["S0"], 
+                  K=params["K"], 
+                  r=params["r"], 
+                  T=params["T"], 
+                  dt=params["dt"], 
+                  sigma=params["sigma"], 
+                  q=params["q"])
 ments_solver = OptionSolverMENTS(
     mdp,
-    exploration_constant=1.0,
-    discount_factor = 0.9,
-    temperature = 1,
-    epsilon = 0.1,
+    exploration_constant=params["exploration_constant"],
+    discount_factor = params["discount_factor"],
+    temperature = params["temperature"],
+    epsilon = params["epsilon"],
     verbose=False
 )
 """ ments_solver = NewOptionMENTS(
@@ -43,6 +51,6 @@ df = pd.DataFrame({
 })
 
 # Save to CSV
-output_file = "samples/option/output_value_conv/value_convergence_config_b.csv"
+output_file = f"samples/option/output_value_conv/value_convergence_config_{config_name}.csv"
 df.to_csv(output_file, index=False)
 print(f"Root rewards saved to {output_file}")

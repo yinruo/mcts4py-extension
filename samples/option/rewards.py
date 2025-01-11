@@ -8,8 +8,9 @@ from samples.option.OptionSolverMENTS import OptionSolverMENTS
 from samples.option.MENTS.SolverMents import StatefulSolverMENTS
 import numpy as np
 import samples.option.config as config
-num_runs = 100
-
+num_runs = 500
+config_name = "F"
+params = config.configurations[config_name]
 
 # Data collection for all algorithms
 results_dict = {
@@ -22,21 +23,28 @@ results_dict = {
     #"MENTS_2":[],
     #"MENTS_2 VC": []
 }
-mdp = USoptionMDP(option_type=config.option_type, S0=config.S0, K=config.K, r=config.r, T=config.T, dt=config.dt, sigma=config.sigma, q = config.q)
+mdp = USoptionMDP(option_type=params["option_type"], 
+                  S0=params["S0"], 
+                  K=params["K"], 
+                  r=params["r"], 
+                  T=params["T"], 
+                  dt=params["dt"], 
+                  sigma=params["sigma"], 
+                  q = params["q"])
 US_solver = OptionSolver(
     mdp,
-    simulation_depth_limit=100,
-    exploration_constant=1.0,
+    simulation_depth_limit=params["simulation_depth_limit"],
+    exploration_constant=params["exploration_constant"],
     verbose=False
 )
 
 MC = MonteCarloOptionPricing(
-        S0=config.S0,
-        K=config.K,
-        T=config.T,
-        r=config.r,
-        sigma=config.sigma,
-        div_yield=config.q,
+        S0=params["S0"],
+        K=params["K"],
+        T=params["T"],
+        r=params["r"],
+        sigma=params["sigma"],
+        div_yield=params["q"],
         simulation_rounds=5,
         no_of_slices=91,
         fix_random_seed=np.random.randint(1, 1000000)
@@ -44,10 +52,10 @@ MC = MonteCarloOptionPricing(
 
 ments_solver = OptionSolverMENTS(
     mdp,
-    exploration_constant=1.0,
-    discount_factor = 0.9,
-    temperature = 0.7,
-    epsilon = 0.2,
+    exploration_constant=params["exploration_constant"],
+    discount_factor =params["discount_factor"],
+    temperature = params["temperature"],
+    epsilon = params["epsilon"],
     verbose=False
 )
 
@@ -77,13 +85,19 @@ for _ in range(num_runs):
     #print("reward for ments vc",reward_ments_2_vc)
     #results_dict["MENTS_2 VC"].append(reward_ments_2_vc)
 
-    MC.cox_ingersoll_ross_model(a=0.5, b=0.05, sigma_r=0.1)  # CIR model
-    MC.heston(kappa=2, theta=0.3, sigma_v=0.3, rho=0.5)      # Heston model
+    MC.cox_ingersoll_ross_model(a=0.5, b=0.05, sigma_r=0.1) 
+    MC.heston(kappa=2, theta=0.3, sigma_v=0.3, rho=0.5) 
     MC.stock_price_simulation()
-    ls_price_put = MC.american_option_longstaff_schwartz(poly_degree=2, option_type=config.option_type)
+    ls_price_put = MC.american_option_longstaff_schwartz(poly_degree=2, option_type=params["option_type"])
     results_dict["LS"].append(ls_price_put)
 
 
 # Convert updated results to DataFrame for plotting
 df = pd.DataFrame(results_dict)
-df.to_csv('samples/option/output/results_config_b.csv', index=False)
+#df.to_csv(f'samples/option/output/results_config_{config_name}.csv', index=False)
+
+try:
+    df.to_csv(f'samples/option/output/results_config_{config_name}.csv', index=False)
+    print("File saved successfully: success")
+except Exception as e:
+    print(f"Failed to save file: {e}")
