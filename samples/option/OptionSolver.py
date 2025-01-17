@@ -10,8 +10,9 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
                  mdp: MDP[TState, TAction],
                  simulation_depth_limit: int,
                  exploration_constant: float,
+                 vc:bool,
                  verbose: bool = False):
-
+        self.vc = vc
         self.mdp = mdp
         self.simulation_depth_limit = simulation_depth_limit
         self.root_node = ActionNode[TState, TAction](None, None)
@@ -56,7 +57,7 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
             #self.simulate_action(new_node)
             if action == USoptionAction.EXERCISE:
                 #print("the action is exercise")
-                final_node = root_node.parent
+                final_node = root_node
                 intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
                 if self.verbose:
                     print("the final reward is", intrinsic_value)
@@ -76,8 +77,8 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         while True:    
             root_node,action = self.run_iteration_hindsight(root_node, 400)
             if action == USoptionAction.EXERCISE:
-                final_node = root_node.parent
-                intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
+                #final_node = root_node.parent
+                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
                 if self.verbose:
                     print("the final reward is", intrinsic_value)
                 return intrinsic_value
@@ -97,7 +98,7 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
             new_state = self.mdp.transition(current_state, action)
             if new_state.time_step == self.mdp.T or new_state.is_terminal == True:
                 intrinsic_value = self.mdp.get_intrinsic_value(current_state.asset_price)
-                print("reward for this round",intrinsic_value)
+                #print("reward for this round",intrinsic_value)
                 return intrinsic_value
             current_state = new_state
         
@@ -106,7 +107,10 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         for i in range(iterations):
             explore_node = self.select(node)
             expanded_node = self.expand(explore_node)
-            self.simulate(expanded_node)
+            if self.vc:
+                self.simulate_hindsight(expanded_node)
+            else:
+                self.simulate(expanded_node)
             self.backpropagate(expanded_node)
         next_node,next_action = self.next(node)
         return next_node,next_action

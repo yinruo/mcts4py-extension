@@ -11,12 +11,14 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
                  discount_factor: float,
                  temperature:float,
                  epsilon:float,
+                 vc:bool,
                  verbose: bool = False):
 
         self.mdp = mdp
         self.discount_factor = discount_factor
         self.temperature = temperature
         self.epsilon = epsilon
+        self.vc = vc
         self.root_node = MENTSNode[TState, TAction](None, None)
         self.simulate_action(self.root_node)
 
@@ -97,10 +99,8 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         while True:    
             root_node,action,rewards = self.run_iteration(root_node, 100)
             if action == USoptionAction.EXERCISE:
-                final_node = root_node.parent
-                intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
-                if self.verbose:
-                    print("the final reward is", intrinsic_value)
+                root_node = root_node.parent
+                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
                 return intrinsic_value
             if root_node.state.time_step == self.mdp.T:
                 intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
@@ -113,20 +113,16 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
     def run_option_hindsight(self):
         root_node = MENTSNode[TState, TAction](None, None)
         self.simulate_action(root_node)
-        current_node = root_node
         while True:    
-            new_node,action,rewards = self.run_iteration_hindsight(current_node, 100)
+            root_node,action,rewards = self.run_iteration_hindsight(root_node, 100)
             #self.print_asset_price_tree(root_node)
             #new_node = MENTSNode(current_node, action)
             #current_node.add_child(new_node)
             #self.simulate_action(new_node)
-            if action == USoptionAction.EXERCISE or new_node.state.time_step == self.mdp.T:
-                intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
-                if self.verbose:
-                    print("the final reward is", intrinsic_value)
+            if action == USoptionAction.EXERCISE or root_node.state.time_step == self.mdp.T:
+                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
                 return intrinsic_value
-            self.detach_parent(new_node)
-            current_node = new_node
+            self.detach_parent(root_node)
 
     def get_root_rewards(self):
         root_node = MENTSNode[TState, TAction](None, None)
@@ -166,7 +162,10 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             if self.verbose:
                 print("expand node qsft", expanded_node.Q_sft)
                 print("expand end, simulate start")
-            simulated_reward = self.simulate(expanded_node)
+            if self.vc:
+                simulated_reward =self.simulate_hindsight(expanded_node)
+            else:
+                simulated_reward = self.simulate(expanded_node)
             if self.verbose:
                 print("simulate end, backpropagate start")
             self.backpropagate(expanded_node,action_taken, simulated_reward)
@@ -176,8 +175,6 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         next_node,next_action = self.next(node)
         return next_node,next_action,root_rewards
     
-
-
     def run_iteration_hindsight(self, node: MENTSNode[TState, TAction],iterations:int):
         root_rewards = []
         for i in range(iterations):
@@ -190,27 +187,27 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         return next_node,next_action,root_rewards
 
     def next(self,node: MENTSNode[TState, TAction]):
-
         if self.mdp.is_terminal(node.state):
             raise ValueError("Option has ended")
         
         soft_indmax_probs = self.soft_indmax(node.Q_sft)
-        #print(soft_indmax_probs)
+        print(soft_indmax_probs)
         index_of_better_value = np.argmax(soft_indmax_probs)
-        #print(index_of_better_value)
-
         best_child = None
         for child in node.children:
             if child.inducing_action.value == index_of_better_value:
                 best_child = child
                 break
 
-        #children = node.children
-        #max_n = max(node.n for node in children)
+        output_list = []
+        for action in node.valid_actions:
+            # node.visits[action.value] holds the visit count
+            output_list.append(f"{action.value}:{node.visits[action.value]}")
 
-        #best_children = [c for c in children if c.n == max_n]
-        #best_child = random.choice(best_children)
+        # Create a string like [1:3, 2:50, 3:10]
+        output_str = "[" + ", ".join(output_list) + "]"
 
+        print(output_str)
         return best_child, best_child.inducing_action
     
 
@@ -290,7 +287,7 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         node.visits[action.value] += 1
         node.Q_sft[action.value] = node.action_reward[action.value] + reward
         node.reward += current_reward
-        print("reward:", node.reward)
+        #print("reward:", node.reward)
         softmax_value = self.softmax_value(node.Q_sft)
         inducing_action = node.inducing_action 
         node = node.parent 
@@ -299,7 +296,7 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             node.visits[inducing_action.value] += 1
             node.Q_sft[inducing_action.value] = node.action_reward[inducing_action.value] + softmax_value
             node.reward += current_reward
-            print("reward:", node.reward)
+            #print("reward:", node.reward)
             if self.verbose:
                 print("softmax value:", softmax_value)
                 print("Q_sft:", node.Q_sft)

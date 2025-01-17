@@ -5,8 +5,7 @@ import numpy as np
 import samples.option.config as config
 import pandas as pd
 
-config_name = "F"
-params = config.configurations[config_name]
+params = config.configurations[config.config_name]
 
 mdp = USoptionMDP(option_type=params["option_type"], 
                   S0=params["S0"], 
@@ -51,6 +50,6 @@ df = pd.DataFrame({
 })
 
 # Save to CSV
-output_file = f"samples/option/output_value_conv/value_convergence_config_{config_name}.csv"
+output_file = f"samples/option/output_value_conv/value_convergence_config_{config.config_name}.csv"
 df.to_csv(output_file, index=False)
 print(f"Root rewards saved to {output_file}")

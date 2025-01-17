@@ -8,9 +8,9 @@ from samples.option.OptionSolverMENTS import OptionSolverMENTS
 from samples.option.MENTS.SolverMents import StatefulSolverMENTS
 import numpy as np
 import samples.option.config as config
-num_runs = 500
-config_name = "F"
-params = config.configurations[config_name]
+num_runs = 300
+
+params = config.configurations[config.config_name]
 
 # Data collection for all algorithms
 results_dict = {
@@ -31,10 +31,11 @@ mdp = USoptionMDP(option_type=params["option_type"],
                   dt=params["dt"], 
                   sigma=params["sigma"], 
                   q = params["q"])
-US_solver = OptionSolver(
+MCTS_solver = OptionSolver(
     mdp,
     simulation_depth_limit=params["simulation_depth_limit"],
     exploration_constant=params["exploration_constant"],
+    vc = False,
     verbose=False
 )
 
@@ -50,34 +51,35 @@ MC = MonteCarloOptionPricing(
         fix_random_seed=np.random.randint(1, 1000000)
     )
 
-ments_solver = OptionSolverMENTS(
+MENTS_solver = OptionSolverMENTS(
     mdp,
     exploration_constant=params["exploration_constant"],
     discount_factor =params["discount_factor"],
     temperature = params["temperature"],
     epsilon = params["epsilon"],
+    vc = False,
     verbose=False
 )
 
-""" ments_solver_2 = StatefulSolverMENTS(
+ments_solver_2 = StatefulSolverMENTS(
     mdp,
     simulation_depth_limit = 1000,
     discount_factor = 0.6,
     exploration_constant=1.0
     
-) """
+) 
 # Run simulations for Standard MCTS
 for _ in range(num_runs):
 
     #baseline_reward = US_solver.run_baseline()
     #results_dict["Baseline"].append(baseline_reward)
-    UCT_reward = US_solver.run_option()
+    UCT_reward = MCTS_solver.run_option()
     results_dict["UCT"].append(UCT_reward)
-    hindsight_reward =  US_solver.run_option_hindsight()
+    hindsight_reward =  MCTS_solver.run_option_hindsight()
     results_dict["UCT VC"].append(hindsight_reward)
-    reward_ments = ments_solver.run_option()
+    reward_ments = MENTS_solver.run_option()
     results_dict["MENTS"].append(reward_ments)
-    reward_ments_vc = ments_solver.run_option_hindsight()
+    reward_ments_vc = MENTS_solver.run_option_hindsight()
     results_dict["MENTS VC"].append(reward_ments_vc)
     #reward_m2 = ments_solver_2.run_option()
     #results_dict["MENTS_2"].append(reward_m2)
@@ -97,7 +99,7 @@ df = pd.DataFrame(results_dict)
 #df.to_csv(f'samples/option/output/results_config_{config_name}.csv', index=False)
 
 try:
-    df.to_csv(f'samples/option/output/results_config_{config_name}.csv', index=False)
+    df.to_csv(f'samples/option/output/results_config_{config.config_name}.csv', index=False)
     print("File saved successfully: success")
 except Exception as e:
     print(f"Failed to save file: {e}")

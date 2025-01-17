@@ -1,12 +1,12 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from samples.option.rewards import config_name
-# Load the data from the saved file
-df = pd.read_csv(f'samples/option/output/results_config_{config_name}.csv')
+import samples.option.config as config
+
+df = pd.read_csv(f'samples/option/output/results_config_{config.config_name}.csv')
 
 # Plot the data
-plt.figure(figsize=(14, 8))
+plt.figure(figsize=(7, 6))
 sns.set(style='whitegrid')
 
 ax = sns.boxplot(
@@ -17,8 +17,7 @@ ax = sns.boxplot(
     palette=['steelblue', 'lightgreen', 'steelblue', 'lightgreen', 'steelblue'],
     saturation=0.7
 )
-
-plt.title(f'Configuration {config_name}')
+plt.title(f'Configuration {config.config_name}')
 plt.xlabel('Planning Method')
 plt.ylabel('Cum. Reward')
 plt.show()
