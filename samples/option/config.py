@@ -1,11 +1,11 @@
-config_name = "F"
+config_name = "B"
 
 global_params = {
     "exploration_constant": 1.0,        
     "simulation_depth_limit": 100,   
     "discount_factor": 0.9, 
     "temperature": 0.7,
-    "epsilon" : 0.2            
+    "epsilon" : 0.2
 }
 
 configurations = {

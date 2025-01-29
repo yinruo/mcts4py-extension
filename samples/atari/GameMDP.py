@@ -8,11 +8,11 @@ class GameState:
         self.current_state = state
         self.is_terminal = is_terminal
 
-GameAction = Enum("GameAction", ACTIONS[game_name])
+GameAction = Enum("GameAction", ACTIONS[f"ALE/{game_name}"])
     
 class GameMDP(MDP[GameAction, GameState]):
     def __init__(self):
-        self.env_name = game_name
+        self.env_name = f"ALE/{game_name}"
         self.env = gym.make(self.env_name)
 
     def initial_state(self) -> GameState:

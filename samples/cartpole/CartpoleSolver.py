@@ -33,24 +33,26 @@ class CartpoleSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Ge
     def select(self, node: ActionNode[TState, TAction], iteration_number=None) -> ActionNode[TState, TAction]:
         current_node = node
         while True:
-            current_children = current_node.children
-            explored_actions = set([c.inducing_action for c in current_children])
-            if len(set(current_node.valid_actions) - explored_actions) > 0:
+            # Check for unexplored actions
+            unexplored_actions = set(current_node.valid_actions) - {child.inducing_action for child in current_node.children}
+            if unexplored_actions:
                 return current_node
-            max_uct_value = max(self.calculate_uct(c) for c in current_children)
-            best_children = [c for c in current_children if self.calculate_uct(c) == max_uct_value]
-            current_node = random.choice(best_children)
+            
+            # Select the child node with the highest UCT value
+            best_children = max(current_node.children, key=lambda c: self.calculate_uct(c))
+            current_node = random.choice([child for child in current_node.children if self.calculate_uct(child) == self.calculate_uct(best_children)])
         
         
 
     def expand(self, node: ActionNode[TState, TAction], iteration_number=None) -> ActionNode[TState, TAction]:
-        current_children = node.children
-        valid_action: set[TAction] = set(node.valid_actions)
-        explored_actions = set([c.inducing_action for c in current_children])
-        unexplored_actions = valid_action - explored_actions
-        action_taken = random.sample(list(unexplored_actions), 1)[0]
+        unexplored_actions = set(node.valid_actions) - {child.inducing_action for child in node.children}
+        
+        # Select one unexplored action and create a new child node.
+        action_taken = random.choice(list(unexplored_actions))
         new_node = ActionNode(node, action_taken)
         node.add_child(new_node)
+
+        # Simulate the selected action to update the state of the new node.
         self.simulate_action(new_node)
         return new_node
 
@@ -74,6 +76,7 @@ class CartpoleSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Ge
         while node is not None:
             node.reward += reward
             node.n += 1
+            reward *= self.discount_factor
             node = node.parent
 
 

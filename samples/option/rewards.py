@@ -57,7 +57,6 @@ MENTS_solver = OptionSolverMENTS(
     discount_factor =params["discount_factor"],
     temperature = params["temperature"],
     epsilon = params["epsilon"],
-    vc = False,
     verbose=False
 )
 

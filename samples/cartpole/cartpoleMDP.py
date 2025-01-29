@@ -45,5 +45,3 @@ class cartpoleMDP(MDP[cartpoleState, cartpoleAction]):
     def actions(self, state: cartpoleState) -> list[cartpoleAction]:
         return [cartpoleAction.LEFT, cartpoleAction.RIGHT]
 
-    def visualize_state(self, state: cartpoleState) -> None:
-        state.env.render()

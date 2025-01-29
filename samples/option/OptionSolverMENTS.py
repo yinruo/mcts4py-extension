@@ -11,14 +11,12 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
                  discount_factor: float,
                  temperature:float,
                  epsilon:float,
-                 vc:bool,
                  verbose: bool = False):
 
         self.mdp = mdp
         self.discount_factor = discount_factor
         self.temperature = temperature
         self.epsilon = epsilon
-        self.vc = vc
         self.root_node = MENTSNode[TState, TAction](None, None)
         self.simulate_action(self.root_node)
 
@@ -97,7 +95,7 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         root_node = MENTSNode[TState, TAction](None, None)
         self.simulate_action(root_node)
         while True:    
-            root_node,action,rewards = self.run_iteration(root_node, 100)
+            root_node,action,rewards = self.run_iteration(root_node, 200)
             if action == USoptionAction.EXERCISE:
                 root_node = root_node.parent
                 intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
@@ -114,12 +112,15 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         root_node = MENTSNode[TState, TAction](None, None)
         self.simulate_action(root_node)
         while True:    
-            root_node,action,rewards = self.run_iteration_hindsight(root_node, 100)
+            root_node,action,rewards = self.run_iteration_hindsight(root_node, 200)
             #self.print_asset_price_tree(root_node)
             #new_node = MENTSNode(current_node, action)
             #current_node.add_child(new_node)
             #self.simulate_action(new_node)
-            if action == USoptionAction.EXERCISE or root_node.state.time_step == self.mdp.T:
+            if action == USoptionAction.EXERCISE:
+                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
+                return intrinsic_value
+            if root_node.state.time_step == self.mdp.T:
                 intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
                 return intrinsic_value
             self.detach_parent(root_node)
@@ -162,15 +163,13 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             if self.verbose:
                 print("expand node qsft", expanded_node.Q_sft)
                 print("expand end, simulate start")
-            if self.vc:
-                simulated_reward =self.simulate_hindsight(expanded_node)
-            else:
-                simulated_reward = self.simulate(expanded_node)
+            simulated_reward = self.simulate(expanded_node)
             if self.verbose:
                 print("simulate end, backpropagate start")
             self.backpropagate(expanded_node,action_taken, simulated_reward)
             if self.verbose:
                 print("backpropagate end, select start")
+            #print(node.reward)
             root_rewards.append(node.reward)
         next_node,next_action = self.next(node)
         return next_node,next_action,root_rewards
@@ -182,6 +181,7 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             expanded_node,action_taken = self.expand(explore_node)
             simulated_reward =self.simulate_hindsight(expanded_node)
             self.backpropagate(expanded_node,action_taken, simulated_reward)
+            print(node.reward)
             root_rewards.append(node.reward)
         next_node,next_action = self.next(node)
         return next_node,next_action,root_rewards

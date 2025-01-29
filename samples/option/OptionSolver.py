@@ -50,7 +50,7 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         root_node = ActionNode[TState, TAction](None, None)
         self.simulate_action(root_node)
         while True:    
-            root_node,action = self.run_iteration(root_node, 100)
+            root_node,action = self.run_iteration(root_node, 200)
             #self.print_asset_price_tree(root_node)
             #new_node = ActionNode(current_node, action)
             #current_node.add_child(new_node)
@@ -75,7 +75,7 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         root_node = ActionNode[TState, TAction](None, None)
         self.simulate_action(root_node)
         while True:    
-            root_node,action = self.run_iteration_hindsight(root_node, 400)
+            root_node,action = self.run_iteration_hindsight(root_node, 200)
             if action == USoptionAction.EXERCISE:
                 #final_node = root_node.parent
                 intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
@@ -181,11 +181,6 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
             return node
         
         valid_actions = node.valid_actions
-
-        if np.random.rand() < self.mdp.p:
-            price_up = True
-        else:
-            price_up = False
 
         new_nodes = []
 

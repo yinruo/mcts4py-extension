@@ -14,12 +14,20 @@ To run gridworld:
 
 - run `python -m samples.gridworld.main`in the root directory
 
-To run Riverraid: 
+To run CartPole game: 
+- run `python -m samples.cartpole.main`in the root directory
+
+To run Atari games: 
 - run `gymnasium[atari]`
 - run `pip install gymnasium[accept-rom-license]`
-- run `python -m samples.Riverraid.main`in the root directory
+- adjust `game_name` in `config.py` to try out a specific Atari game.
+- run `python -m samples.atari.rewards` to generate reward arrays for 3 different planning methods.
+- run `python -m samples.Riverraid.rewards_graph` to generate the comparing graph.
 
 To run american option pricing : 
-- run `python -m samples.option.main`in the root directory
+- run `python -m samples.option.rewards`to generate reward arrays for 5 different planning methods.
+- run `python -m samples.option.rewards_graph` to generate the comparing graph.
+- run `python -m samples.option.value_conv`to generate log reward arrays for root node for MENTS and MENTS VC
+- run `python -m samples.option.value_conv_graph`to generate the above graph.
 
 ```

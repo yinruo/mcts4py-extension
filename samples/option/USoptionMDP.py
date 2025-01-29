@@ -8,8 +8,6 @@ class USoptionAction(Enum):
     EXERCISE = 0
     HOLD = 1
 
-
-
 class USoptionState:
     def __init__(self, time_step: int, asset_price: float, is_terminal: bool):
         self.time_step = time_step
@@ -59,7 +57,7 @@ class USoptionMDP(MDP[USoptionAction, USoptionState]):
 
     def reward(self, state: USoptionState, action:  USoptionAction, new_state: USoptionState) -> float:
         if action == USoptionAction.EXERCISE:
-            return max(self.K - state.asset_price, 0)  
+            return self.get_intrinsic_value(state.asset_price)
         return 0  
     
     def is_terminal(self, state: USoptionState) -> bool:

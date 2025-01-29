@@ -154,29 +154,24 @@ class GameSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], G
         for action in node.valid_actions:
             node.Q_sft[action.value] = 0.0
 
-    def run_game(self, episodes: int):
-        rewards = []
-        for e in range(episodes):
-            reward_episode = 0
-            done = False
-            root_node = MENTSNode[TState, TAction](None, None)
-            self.simulate_action(root_node)
-            self.env = gym.make(self.env_name)
-            self.env.reset()
-            print('episode #' + str(e+1))
+    def run_game(self):
+        reward_episode = 0
+        done = False
+        root_node = MENTSNode[TState, TAction](None, None)
+        self.simulate_action(root_node)
+        self.env = gym.make(self.env_name)
+        self.env.reset()
 
-            while not done : 
-                root_node, action = self.run_game_iteration(root_node, 50)
-                #print(action.value)
-                observation, reward, terminated, truncated, _ = self.env.step(action.value)
-                reward_episode += reward
-                done = terminated or truncated
-                if done:
-                    print('reward ' + str(reward_episode))
-                    rewards.append(reward_episode)
-                    self.env.close()
-                    break
-        return rewards
+        while not done : 
+            root_node, action = self.run_game_iteration(root_node, 50)
+            #print(action.value)
+            _, reward, terminated, truncated, _ = self.env.step(action.value)
+            reward_episode += reward
+            done = terminated or truncated
+            if done:
+                print('MENTS episode reward: ',reward_episode)
+                self.env.close()
+                return reward_episode
   
 
     def run_game_iteration(self, node: MENTSNode[TState, TAction],iterations:int):
@@ -236,32 +231,7 @@ class GameSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], G
 
         return best_child, best_child.inducing_action
 
-    def run_random_game(self, episodes: int):
-        rewards = []
-        total_reward = 0
-        for e in range(episodes):
-            reward_episode = 0
-            action_count = 0
-            done = False
-            root_node = self.root()
-            game = gym.make(self.env_name)
-            game.reset()
-            print('episode #' + str(e+1))
 
-            while not done:
-                action = game.action_space.sample()
-                observation, reward, terminated, truncated, _ = game.step(action)
-                action_count += 1
-                reward_episode += reward
-                done = terminated or truncated
 
-                if done:
-                    print('reward ' + str(reward_episode))
-                    rewards.append(reward_episode)
-                    total_reward += reward_episode 
-                    game.close()
-                    break
-        average_reward = total_reward / episodes if episodes > 0 else 0
-        return rewards, average_reward
 
 
