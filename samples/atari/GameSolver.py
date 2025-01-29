@@ -84,21 +84,6 @@ class GameSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generi
                 self.env.unwrapped.restore_state(node.state.current_state)
                 break
         return total_reward 
-    
-    def simulate_vc(self, node: ActionNode[TState, TAction], depth=0) -> float:
-        self.env.unwrapped.restore_state(node.state.current_state)
-        valid_actions = self.mdp.actions()
-        total_reward = 0
-        done = False
-        while not done:
-            random_action = random.choice(valid_actions)
-            observation, reward, terminated, truncated, _ = self.env.step(random_action.value)
-            done = terminated or truncated
-            total_reward += reward
-            if done:
-                self.env.unwrapped.restore_state(node.state.current_state)
-                break
-        return total_reward 
 
     def backpropagate(self, node: ActionNode[TState, TAction], reward: float) -> None:
         current_node = node

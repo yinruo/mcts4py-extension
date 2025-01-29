@@ -17,7 +17,7 @@ mdp = GameMDP()
 solverMCTS = GameSolver(
     mdp,
     exploration_constant = 1.0,
-    simulation_depth_limit = 100,
+    simulation_depth_limit = 1000,
     discount_factor = 0.8,
     env_name = f"ALE/{game_name}",
     verbose = False)
@@ -25,6 +25,7 @@ solverMCTS = GameSolver(
 solverMENTS = GameSolverMENTS(
     mdp,
     exploration_constant = 1,
+    simulation_depth_limit = 1000,
     discount_factor = 0.9,
     temperature = 1,
     epsilon = 0.1,

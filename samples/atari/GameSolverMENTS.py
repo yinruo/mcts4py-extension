@@ -9,6 +9,7 @@ class GameSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], G
     def __init__(self,
                  mdp: MDP[TState, TAction],
                  exploration_constant: float,
+                 simulation_depth_limit:float,
                  discount_factor: float,
                  temperature, 
                  epsilon,
@@ -16,6 +17,7 @@ class GameSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], G
                  verbose: bool = False):
         self.mdp = mdp
         self.discount_factor = discount_factor
+        self.simulation_depth_limit = simulation_depth_limit
         self.temperature = temperature
         self.epsilon = epsilon
         self.env_name = env_name
@@ -112,8 +114,9 @@ class GameSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], G
             random_action = random.choice(valid_actions)
             observation, reward, terminated, truncated, _ = self.env.step(random_action.value)
             done = terminated or truncated
+            depth += 1
             total_reward += reward
-            if done:
+            if done or self.simulation_depth_limit<depth:
                 self.env.unwrapped.restore_state(node.state.current_state)
                 break
         return total_reward 
