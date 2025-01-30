@@ -78,9 +78,10 @@ class GameSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Generi
         while not done:
             random_action = random.choice(valid_actions)
             observation, reward, terminated, truncated, _ = self.env.step(random_action.value)
+            depth += 1
             done = terminated or truncated
             total_reward += reward
-            if done:
+            if done or self.simulation_depth_limit<depth:
                 self.env.unwrapped.restore_state(node.state.current_state)
                 break
         return total_reward 

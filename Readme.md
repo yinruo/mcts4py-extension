@@ -22,12 +22,12 @@ To run Atari games:
 - run `pip install gymnasium[accept-rom-license]`
 - adjust `game_name` in `config.py` to try out a specific Atari game.
 - run `python -m samples.atari.rewards` to generate reward arrays for 3 different planning methods.
-- run `python -m samples.Riverraid.rewards_graph` to generate the comparing graph.
+- run `python -m samples.atari.rewards_graph` to generate the comparing graph.
 
 To run american option pricing : 
 - run `python -m samples.option.rewards`to generate reward arrays for 5 different planning methods.
 - run `python -m samples.option.rewards_graph` to generate the comparing graph.
 - run `python -m samples.option.value_conv`to generate log reward arrays for root node for MENTS and MENTS VC
 - run `python -m samples.option.value_conv_graph`to generate the above graph.
-
+- run `python -m samples.option.plotting_v2` to generate the comparing graph for both. 
 ```
