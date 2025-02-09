@@ -364,10 +364,6 @@ class MENTSNode(Generic[TState, TAction], Node[TAction]):
     def most_visited_child(self) -> "MENTSNode":
         return max(self.children, key=lambda c: c.n)
 
-    def update_visit_count(self, action: TAction) -> None:
-        self.n += 1
-        self.Q_sft[action.value] = self.total_reward / self.n
-
     def __str__(self):
         inducing_action_value = self.inducing_action.value if self.inducing_action is not None else "None"
         return f"State: {self.state}, Action: {inducing_action_value}, Visits: {self.n}, Q_sft: {self.Q_sft}"
