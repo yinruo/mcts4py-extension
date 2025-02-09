@@ -99,7 +99,7 @@ df = pd.DataFrame(results_dict)
 #df.to_csv(f'samples/option/output/results_config_{config_name}.csv', index=False)
 
 try:
-    df.to_csv(f'samples/option/output/results_config_{config.config_name}_test.csv', index=False)
+    df.to_csv(f'samples/option/output/results_config_{config.config_name}.csv', index=False)
     print("File saved successfully: success")
 except Exception as e:
     print(f"Failed to save file: {e}")
