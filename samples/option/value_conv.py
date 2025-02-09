@@ -14,7 +14,8 @@ mdp = USoptionMDP(option_type=params["option_type"],
                   T=params["T"], 
                   dt=params["dt"], 
                   sigma=params["sigma"], 
-                  q=params["q"])
+                  q=params["q"],
+                  price_change="gbm")
 ments_solver = OptionSolverMENTS(
     mdp,
     exploration_constant=params["exploration_constant"],

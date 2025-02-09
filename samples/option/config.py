@@ -1,4 +1,4 @@
-config_name = "B"
+config_name = "A"
 
 global_params = {
     "exploration_constant": 1.0,        

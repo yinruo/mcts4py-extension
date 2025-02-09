@@ -60,7 +60,6 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
                 final_node = root_node
                 intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
                 if self.verbose:
-                    print("the action is hold")
                     print("the final reward is", intrinsic_value)
                 return intrinsic_value
 
