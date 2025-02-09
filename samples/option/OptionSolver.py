@@ -51,18 +51,19 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         self.simulate_action(root_node)
         while True:    
             root_node,action = self.run_iteration(root_node, 200)
-            #self.print_asset_price_tree(root_node)
             #new_node = ActionNode(current_node, action)
             #current_node.add_child(new_node)
             #self.simulate_action(new_node)
             if action == USoptionAction.EXERCISE:
-                #print("the action is exercise")
+                if self.verbose:
+                    print("the action is exercise")
                 final_node = root_node
                 intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
                 if self.verbose:
+                    print("the action is hold")
                     print("the final reward is", intrinsic_value)
                 return intrinsic_value
-                #print("the action is hold")
+
             if root_node.state.time_step == self.mdp.T:
                 intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
                 if self.verbose:
@@ -98,7 +99,8 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
             new_state = self.mdp.transition(current_state, action)
             if new_state.time_step == self.mdp.T or new_state.is_terminal == True:
                 intrinsic_value = self.mdp.get_intrinsic_value(current_state.asset_price)
-                #print("reward for this round",intrinsic_value)
+                if self.verbose:
+                    print("reward for this round",intrinsic_value)
                 return intrinsic_value
             current_state = new_state
         
@@ -133,7 +135,8 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
 
         children = node.children
         max_n = max(node.n for node in children)
-        #print("number of visits" ,max_n)
+        if self.verbose:
+            print("number of visits" ,max_n)
 
         best_children = [c for c in children if c.n == max_n]
         best_child = random.choice(best_children)
@@ -147,7 +150,8 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
 
         children = node.children
         max_r = max(node.reward for node in children)
-        #print("number of visits" ,max_n)
+        if self.verbose:
+            print("number of visits" ,max_r)
 
         best_children = [c for c in children if c.reward == max_r]
         best_child = random.choice(best_children)

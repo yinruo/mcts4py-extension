@@ -39,10 +39,9 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         action_probabilities = (1 - lambda_s) * soft_indmax_probs + lambda_s * (1 / len(node.valid_actions))
         if self.verbose:        
             print("action_probabilities", action_probabilities)
-
-        #print("Number of valid_actions:", len(node.valid_actions))
-        #print("Number of action_probabilities:", len(action_probabilities))
-        #print("Q_sft keys:", list(node.Q_sft.keys()))
+            print("Number of valid_actions:", len(node.valid_actions))
+            print("Number of action_probabilities:", len(action_probabilities))
+            print("Q_sft keys:", list(node.Q_sft.keys()))
         action = np.random.choice(node.valid_actions, p=action_probabilities)
         return action
     
@@ -118,6 +117,9 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             #current_node.add_child(new_node)
             #self.simulate_action(new_node)
             if action == USoptionAction.EXERCISE:
+                if self.verbose:
+                    print("the action is hold")
+                    print("the final reward is", intrinsic_value)
                 intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
                 return intrinsic_value
             if root_node.state.time_step == self.mdp.T:
@@ -169,7 +171,7 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             self.backpropagate(expanded_node,action_taken, simulated_reward)
             if self.verbose:
                 print("backpropagate end, select start")
-            #print(node.reward)
+                print(node.reward)
             root_rewards.append(node.reward)
         next_node,next_action = self.next(node)
         return next_node,next_action,root_rewards
@@ -181,7 +183,8 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             expanded_node,action_taken = self.expand(explore_node)
             simulated_reward =self.simulate_hindsight(expanded_node)
             self.backpropagate(expanded_node,action_taken, simulated_reward)
-            print(node.reward)
+            if self.verbose:
+                print(node.reward)
             root_rewards.append(node.reward)
         next_node,next_action = self.next(node)
         return next_node,next_action,root_rewards
@@ -191,7 +194,8 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             raise ValueError("Option has ended")
         
         soft_indmax_probs = self.soft_indmax(node.Q_sft)
-        print(soft_indmax_probs)
+        if self.verbose:
+            print("soft_indmax_probs",soft_indmax_probs)
         index_of_better_value = np.argmax(soft_indmax_probs)
         best_child = None
         for child in node.children:
@@ -204,10 +208,10 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             # node.visits[action.value] holds the visit count
             output_list.append(f"{action.value}:{node.visits[action.value]}")
 
-        # Create a string like [1:3, 2:50, 3:10]
+        # Create a string for number of visits in each child node
         output_str = "[" + ", ".join(output_list) + "]"
-
-        print(output_str)
+        if self.verbose:
+            print("output string: ",output_str)
         return best_child, best_child.inducing_action
     
 
@@ -287,7 +291,8 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         node.visits[action.value] += 1
         node.Q_sft[action.value] = node.action_reward[action.value] + reward
         node.reward += current_reward
-        #print("reward:", node.reward)
+        if self.verbose:
+            print("reward:", node.reward)
         softmax_value = self.softmax_value(node.Q_sft)
         inducing_action = node.inducing_action 
         node = node.parent 
@@ -296,8 +301,8 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             node.visits[inducing_action.value] += 1
             node.Q_sft[inducing_action.value] = node.action_reward[inducing_action.value] + softmax_value
             node.reward += current_reward
-            #print("reward:", node.reward)
             if self.verbose:
+                print("reward:", node.reward)
                 print("softmax value:", softmax_value)
                 print("Q_sft:", node.Q_sft)
 

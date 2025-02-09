@@ -29,5 +29,10 @@ To run american option pricing :
 - run `python -m samples.option.rewards_graph` to generate the comparing graph.
 - run `python -m samples.option.value_conv`to generate log reward arrays for root node for MENTS and MENTS VC
 - run `python -m samples.option.value_conv_graph`to generate the above graph.
-- run `python -m samples.option.plotting_v2` to generate the comparing graph for both. 
+- run `python -m samples.option.plotting_v2` to generate the comparing graph for both rewards and root node rewards in .pynb file . 
+- The generated reward comparison graphs can be found in `samples/option/output`.
+- The generated reward comparison graphs for root node can be found in `samples/option/output_value_conv`.
+
+
+
 ```

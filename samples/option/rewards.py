@@ -30,7 +30,8 @@ mdp = USoptionMDP(option_type=params["option_type"],
                   T=params["T"], 
                   dt=params["dt"], 
                   sigma=params["sigma"], 
-                  q = params["q"])
+                  q = params["q"],
+                  price_change="gbm")
 MCTS_solver = OptionSolver(
     mdp,
     simulation_depth_limit=params["simulation_depth_limit"],

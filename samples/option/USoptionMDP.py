@@ -24,7 +24,8 @@ class USoptionMDP(MDP[USoptionAction, USoptionState]):
                  T: float,   
                  dt: float,
                  sigma: float,
-                 q: float
+                 q: float,
+                 price_change
                  ): 
         self.option_type = option_type   
         self.S0 = S0
@@ -37,6 +38,7 @@ class USoptionMDP(MDP[USoptionAction, USoptionState]):
         self.u = np.exp(sigma * np.sqrt(self.dt)) 
         self.d = 1 / self.u  
         self.p = ( math.exp( (self.r - self.q) * self.dt ) - self.d ) / ( self.u - self.d )
+        self.price_change = price_change
         
 
     def get_intrinsic_value(self, S):
@@ -66,16 +68,14 @@ class USoptionMDP(MDP[USoptionAction, USoptionState]):
     def transition(self, state: USoptionState, action: USoptionAction) -> USoptionState:
         if state.time_step == self.T:
             return USoptionState(state.time_step, state.asset_price, True)
-        # binimial equation. rasise percentage p, drop percentage 1-p
-        #new_price = self.simulate_gbm(self.S0,self.dt, self.r, self.sigma)
-        #new_price = state.asset_price * (self.u if np.random.rand() < self.p else self.d)
-
-        #if np.random.rand() < self.p:
-            #new_price = state.asset_price * self.u  
-        #else:
-            #new_price = state.asset_price * self.d 
-        new_price = self.simulate_gbm(state.asset_price, self.dt, self.r, self.sigma,self.q)
-        #print("new price:",new_price)
+        if self.price_change == "gbm":
+            new_price = self.simulate_gbm(state.asset_price, self.dt, self.r, self.sigma,self.q)
+        else:
+            #price movement according to binomial price model
+            if np.random.rand() < self.p:
+                new_price = state.asset_price * self.u  
+            else:
+                new_price = state.asset_price * self.d
         new_time_step = round(state.time_step + self.dt, 3) 
         if state.time_step + self.dt == self.T or action == USoptionAction.EXERCISE:
             return USoptionState(new_time_step, new_price, True)
