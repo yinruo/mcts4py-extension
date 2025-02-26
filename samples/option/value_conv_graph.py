@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import samples.option.config as config  # Import configuration file
 # Load the data from the CSV file
-input_file = f"samples/option/output_value_conv/value_convergence_config_{config.config_name}.csv"
+input_file = f"samples/option/output_value_conv/value_convergence_config_{config.config_name}_test.csv"
 df = pd.read_csv(input_file)
 
 # Extract data for plotting

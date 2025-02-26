@@ -62,159 +62,6 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         soft_indmax_value /= np.sum(soft_indmax_value)
         return soft_indmax_value
 
-    def simulate_action(self, node: MENTSNode[TState, TAction]):
-        if node.parent == None:
-            initial_state = self.mdp.initial_state()
-            node.state = initial_state
-            node.valid_actions = self.mdp.actions(node.state)
-            for action in node.valid_actions:
-                node.Q_sft[action.value] = 0.0 
-                node.action_reward[action.value] = 0.0
-            return
-
-        if node.inducing_action == None:
-            raise RuntimeError("Action was null for non-null parent")
-        new_state = self.mdp.transition(node.parent.state, node.inducing_action)
-        node.state = new_state
-        node.valid_actions = self.mdp.actions(node.state)   
-        for action in node.valid_actions:
-            node.Q_sft[action.value] = 0.0 
-
-    def get_intrinsic_value(self, S):
-        if self.mdp.option_type == "Put":
-            return np.maximum(self.mdp.K - S, 0)  
-        elif self.mdp.option_type == "Call":
-            return np.maximum(S - self.mdp.K, 0)
-        
-    def detach_parent(self,node: MENTSNode[TState, TAction]):
-        del node.parent
-        node.parent = None
-
-    def run_option(self):
-        root_node = MENTSNode[TState, TAction](None, None)
-        self.simulate_action(root_node)
-        while True:    
-            root_node,action,rewards = self.run_iteration(root_node, 200)
-            if action == USoptionAction.EXERCISE:
-                root_node = root_node.parent
-                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
-                return intrinsic_value
-            if root_node.state.time_step == self.mdp.T:
-                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
-                if self.verbose:
-                    print("the final reward is", intrinsic_value)
-                return intrinsic_value
-            self.detach_parent(root_node)
-    
-
-    def run_option_hindsight(self):
-        root_node = MENTSNode[TState, TAction](None, None)
-        self.simulate_action(root_node)
-        while True:    
-            root_node,action,rewards = self.run_iteration_hindsight(root_node, 200)
-            #self.print_asset_price_tree(root_node)
-            #new_node = MENTSNode(current_node, action)
-            #current_node.add_child(new_node)
-            #self.simulate_action(new_node)
-            if action == USoptionAction.EXERCISE:
-                if self.verbose:
-                    print("the action is hold")
-                    print("the final reward is", intrinsic_value)
-                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
-                return intrinsic_value
-            if root_node.state.time_step == self.mdp.T:
-                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
-                return intrinsic_value
-            self.detach_parent(root_node)
-
-    def get_root_rewards(self):
-        root_node = MENTSNode[TState, TAction](None, None)
-        self.simulate_action(root_node)
-        root_node,action_taken, root_rewards = self.run_iteration(root_node, 200)
-        return root_rewards
-    
-    def get_root_rewards_hindsight(self):
-        root_node = MENTSNode[TState, TAction](None, None)
-        self.simulate_action(root_node)
-        root_node,action_taken, root_rewards = self.run_iteration_hindsight(root_node, 200)
-        return root_rewards
-    
-    def run_baseline(self):
-        root_node = MENTSNode[TState, TAction](None, None)
-        self.simulate_action(root_node)
-        current_state = root_node.state
-        while True:
-            action = USoptionAction.HOLD
-            new_state = self.mdp.transition(current_state, action)
-            if new_state.time_step == self.mdp.T or new_state.is_terminal == True:
-                intrinsic_value = self.mdp.get_intrinsic_value(current_state.asset_price)
-                if self.verbose:
-                    print("reward for this round",intrinsic_value)
-                return intrinsic_value
-            current_state = new_state
-        
-
-    def run_iteration(self, node: MENTSNode[TState, TAction],iterations:int):
-        root_rewards = []
-        for i in range(iterations):
-            explore_node = self.select(node)
-            if self.verbose:
-                print("explore node qsft", explore_node.Q_sft)
-                print("select end, expand start")
-            expanded_node,action_taken = self.expand(explore_node)
-            if self.verbose:
-                print("expand node qsft", expanded_node.Q_sft)
-                print("expand end, simulate start")
-            simulated_reward = self.simulate(expanded_node)
-            if self.verbose:
-                print("simulate end, backpropagate start")
-            self.backpropagate(expanded_node,action_taken, simulated_reward)
-            if self.verbose:
-                print("backpropagate end, select start")
-                print(node.reward)
-            root_rewards.append(node.reward)
-        next_node,next_action = self.next(node)
-        return next_node,next_action,root_rewards
-    
-    def run_iteration_hindsight(self, node: MENTSNode[TState, TAction],iterations:int):
-        root_rewards = []
-        for i in range(iterations):
-            explore_node = self.select(node)
-            expanded_node,action_taken = self.expand(explore_node)
-            simulated_reward =self.simulate_hindsight(expanded_node)
-            self.backpropagate(expanded_node,action_taken, simulated_reward)
-            if self.verbose:
-                print(node.reward)
-            root_rewards.append(node.reward)
-        next_node,next_action = self.next(node)
-        return next_node,next_action,root_rewards
-
-    def next(self,node: MENTSNode[TState, TAction]):
-        if self.mdp.is_terminal(node.state):
-            raise ValueError("Option has ended")
-        
-        soft_indmax_probs = self.soft_indmax(node.Q_sft)
-        if self.verbose:
-            print("soft_indmax_probs",soft_indmax_probs)
-        index_of_better_value = np.argmax(soft_indmax_probs)
-        best_child = None
-        for child in node.children:
-            if child.inducing_action.value == index_of_better_value:
-                best_child = child
-                break
-
-        output_list = []
-        for action in node.valid_actions:
-            # node.visits[action.value] holds the visit count
-            output_list.append(f"{action.value}:{node.visits[action.value]}")
-
-        # Create a string for number of visits in each child node
-        output_str = "[" + ", ".join(output_list) + "]"
-        if self.verbose:
-            print("output string: ",output_str)
-        return best_child, best_child.inducing_action
-    
-
     def select(self, node: MENTSNode[TState, TAction], iteration_number=None) -> MENTSNode[TState, TAction]:
         if len(node.children) == 0:
             return node
@@ -310,18 +157,161 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
             inducing_action = node.inducing_action  
             node = node.parent 
             current_reward *= self.discount_factor
+    
+    def simulate_action(self, node: MENTSNode[TState, TAction]):
+        if node.parent == None:
+            initial_state = self.mdp.initial_state()
+            node.state = initial_state
+            node.valid_actions = self.mdp.actions(node.state)
+            for action in node.valid_actions:
+                node.Q_sft[action.value] = 0.0 
+                node.action_reward[action.value] = 0.0
+            return
 
+        if node.inducing_action == None:
+            raise RuntimeError("Action was null for non-null parent")
+        new_state = self.mdp.transition(node.parent.state, node.inducing_action)
+        node.state = new_state
+        node.valid_actions = self.mdp.actions(node.state)   
+        for action in node.valid_actions:
+            node.Q_sft[action.value] = 0.0 
+        
+    def detach_parent(self,node: MENTSNode[TState, TAction]):
+        del node.parent
+        node.parent = None
+        
+    def run_iteration(self, node: MENTSNode[TState, TAction],iterations:int):
+        root_rewards = []
+        for i in range(iterations):
+            explore_node = self.select(node)
+            if self.verbose:
+                print("explore node qsft", explore_node.Q_sft)
+                print("select end, expand start")
+            expanded_node,action_taken = self.expand(explore_node)
+            if self.verbose:
+                print("expand node qsft", expanded_node.Q_sft)
+                print("expand end, simulate start")
+            simulated_reward = self.simulate(expanded_node)
+            if self.verbose:
+                print("simulate end, backpropagate start")
+            self.backpropagate(expanded_node,action_taken, simulated_reward)
+            if self.verbose:
+                print("backpropagate end, select start")
+                print(node.reward)
+            root_rewards.append(node.reward)
+        next_node,next_action = self.next(node)
+        return next_node,next_action,root_rewards
+    
+    def run_iteration_hindsight(self, node: MENTSNode[TState, TAction],iterations:int):
+        root_rewards = []
+        for i in range(iterations):
+            explore_node = self.select(node)
+            expanded_node,action_taken = self.expand(explore_node)
+            simulated_reward =self.simulate_hindsight(expanded_node)
+            self.backpropagate(expanded_node,action_taken, simulated_reward)
+            if self.verbose:
+                print(node.reward)
+            root_rewards.append(node.reward)
+        next_node,next_action = self.next(node)
+        return next_node,next_action,root_rewards
 
+    def next(self,node: MENTSNode[TState, TAction]):
+        if self.mdp.is_terminal(node.state):
+            raise ValueError("Option has ended")
+        
+        soft_indmax_probs = self.soft_indmax(node.Q_sft)
+        if self.verbose:
+            print("soft_indmax_probs",soft_indmax_probs)
+        index_of_better_value = np.argmax(soft_indmax_probs)
+        best_child = None
+        for child in node.children:
+            if child.inducing_action.value == index_of_better_value:
+                best_child = child
+                break
+
+        output_list = []
+        for action in node.valid_actions:
+            # node.visits[action.value] holds the visit count
+            output_list.append(f"{action.value}:{node.visits[action.value]}")
+
+        # Create a string for number of visits in each child node
+        output_str = "[" + ", ".join(output_list) + "]"
+        if self.verbose:
+            print("output string: ",output_str)
+        return best_child, best_child.inducing_action
+    
+    def run_option(self):
+        root_node = MENTSNode[TState, TAction](None, None)
+        self.simulate_action(root_node)
+        current_node = root_node
+        while True:    
+            new_node,action,rewards = self.run_iteration(current_node, 400)
+            if action == USoptionAction.EXERCISE:
+                if self.verbose:
+                    print("the action is exercise")
+                intrinsic_value = self.mdp.get_intrinsic_value(current_node.state.asset_price)
+                return intrinsic_value
+            if new_node.state.time_step == self.mdp.T:
+                intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
+                if self.verbose:
+                    print("the final reward is", intrinsic_value)
+                return intrinsic_value
+            current_node = new_node
+            self.detach_parent(current_node)
+    
+
+    def run_option_hindsight(self):
+        root_node = MENTSNode[TState, TAction](None, None)
+        self.simulate_action(root_node)
+        current_node = root_node
+        while True:    
+            new_node,action,rewards = self.run_iteration_hindsight(current_node, 400)
+            #self.print_asset_price_tree(root_node)
+            #new_node = MENTSNode(current_node, action)
+            #current_node.add_child(new_node)
+            #self.simulate_action(new_node)
+            if action == USoptionAction.EXERCISE:
+                if self.verbose:
+                    print("the action is exercise")
+                    print("the final reward is", intrinsic_value)
+                intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
+                return intrinsic_value
+            if new_node.state.time_step == self.mdp.T:
+                intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
+                return intrinsic_value
+            current_node = new_node
+            self.detach_parent(root_node)
+    
+    def run_baseline(self):
+        root_node = MENTSNode[TState, TAction](None, None)
+        self.simulate_action(root_node)
+        current_state = root_node.state
+        while True:
+            action = USoptionAction.HOLD
+            new_state = self.mdp.transition(current_state, action)
+            if new_state.time_step == self.mdp.T or new_state.is_terminal == True:
+                intrinsic_value = self.mdp.get_intrinsic_value(current_state.asset_price)
+                if self.verbose:
+                    print("reward for this round",intrinsic_value)
+                return intrinsic_value
+            current_state = new_state
+    
     def get_root_rewards(self):
         root_node = MENTSNode[TState, TAction](None, None)
         self.simulate_action(root_node)
-        _,_, root_rewards = self.run_iteration(root_node, 200)
+        root_node,action_taken, root_rewards = self.run_iteration(root_node, 200)
         return root_rewards
     
     def get_root_rewards_hindsight(self):
         root_node = MENTSNode[TState, TAction](None, None)
         self.simulate_action(root_node)
-        _,_, root_rewards = self.run_iteration_hindsight(root_node, 200)
+        root_node,action_taken, root_rewards = self.run_iteration_hindsight(root_node, 200)
         return root_rewards
+
+
+
+    
+
+
             
             

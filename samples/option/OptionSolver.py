@@ -23,140 +23,6 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
     def root(self) -> ActionNode[TState, TAction]:
         return self.root_node 
 
-    def simulate_action(self, node: ActionNode[TState, TAction]):
-        if node.parent == None:
-            initial_state = self.mdp.initial_state()
-            node.state = initial_state
-            node.valid_actions = self.mdp.actions(node.state)
-            return
-
-        if node.inducing_action == None:
-            raise RuntimeError("Action was null for non-null parent")
-        new_state = self.mdp.transition(node.parent.state, node.inducing_action)
-        node.state = new_state
-        node.valid_actions = self.mdp.actions(node.state)
-
-    def get_intrinsic_value(self, S):
-        if self.mdp.option_type == "Put":
-            return np.maximum(self.mdp.K - S, 0)  
-        elif self.mdp.option_type == "Call":
-            return np.maximum(S - self.mdp.K, 0)
-        
-    def detach_parent(self,node: ActionNode[TState, TAction]):
-        del node.parent
-        node.parent = None
-
-    def run_option(self):
-        root_node = ActionNode[TState, TAction](None, None)
-        self.simulate_action(root_node)
-        while True:    
-            root_node,action = self.run_iteration(root_node, 200)
-            #new_node = ActionNode(current_node, action)
-            #current_node.add_child(new_node)
-            #self.simulate_action(new_node)
-            if action == USoptionAction.EXERCISE:
-                if self.verbose:
-                    print("the action is exercise")
-                final_node = root_node
-                intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
-                if self.verbose:
-                    print("the final reward is", intrinsic_value)
-                return intrinsic_value
-
-            if root_node.state.time_step == self.mdp.T:
-                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
-                if self.verbose:
-                    print("the final reward is", intrinsic_value)
-                return intrinsic_value
-            self.detach_parent(root_node)
-    
-
-    def run_option_hindsight(self):
-        root_node = ActionNode[TState, TAction](None, None)
-        self.simulate_action(root_node)
-        while True:    
-            root_node,action = self.run_iteration_hindsight(root_node, 200)
-            if action == USoptionAction.EXERCISE:
-                #final_node = root_node.parent
-                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
-                if self.verbose:
-                    print("the final reward is", intrinsic_value)
-                return intrinsic_value
-            if root_node.state.time_step == self.mdp.T:
-                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
-                if self.verbose:
-                    print("the final reward is", intrinsic_value)
-                return intrinsic_value
-            self.detach_parent(root_node)
-
-    def run_baseline(self):
-        root_node = ActionNode[TState, TAction](None, None)
-        self.simulate_action(root_node)
-        current_state = root_node.state
-        while True:
-            action = USoptionAction.HOLD
-            new_state = self.mdp.transition(current_state, action)
-            if new_state.time_step == self.mdp.T or new_state.is_terminal == True:
-                intrinsic_value = self.mdp.get_intrinsic_value(current_state.asset_price)
-                if self.verbose:
-                    print("reward for this round",intrinsic_value)
-                return intrinsic_value
-            current_state = new_state
-        
-
-    def run_iteration(self, node: ActionNode[TState, TAction],iterations:int):
-        for i in range(iterations):
-            explore_node = self.select(node)
-            expanded_node = self.expand(explore_node)
-            if self.vc:
-                self.simulate_hindsight(expanded_node)
-            else:
-                self.simulate(expanded_node)
-            self.backpropagate(expanded_node)
-        next_node,next_action = self.next(node)
-        return next_node,next_action
-    
-
-
-    def run_iteration_hindsight(self, node: ActionNode[TState, TAction],iterations:int):
-        for i in range(iterations):
-            explore_node = self.select(node)
-            expanded_node = self.expand(explore_node)
-            self.simulate_hindsight(expanded_node)
-            self.backpropagate(expanded_node)
-        next_node,next_action = self.next_hindsight(node)
-        return next_node,next_action
-
-    def next(self,node: ActionNode[TState, TAction]):
-
-        if self.mdp.is_terminal(node.state):
-            raise ValueError("Option has ended")
-
-        children = node.children
-        max_n = max(node.n for node in children)
-        if self.verbose:
-            print("number of visits" ,max_n)
-
-        best_children = [c for c in children if c.n == max_n]
-        best_child = random.choice(best_children)
-
-        return best_child, best_child.inducing_action
-    
-    def next_hindsight(self,node: ActionNode[TState, TAction]):
-
-        if self.mdp.is_terminal(node.state):
-            raise ValueError("Option has ended")
-
-        children = node.children
-        max_r = max(node.reward for node in children)
-        if self.verbose:
-            print("number of visits" ,max_r)
-
-        best_children = [c for c in children if c.reward == max_r]
-        best_child = random.choice(best_children)
-
-        return best_child, best_child.inducing_action
-
     def select(self, node: ActionNode[TState, TAction], iteration_number=None) -> ActionNode[TState, TAction]:
         if len(node.children) == 0:
             return node
@@ -195,6 +61,7 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         
         expand_node = random.choice(new_nodes)
         return expand_node
+
     
     def simulate(self, node: ActionNode[TState, TAction], depth=0) -> float:
         if node.inducing_action == USoptionAction.EXERCISE:
@@ -230,7 +97,7 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
             intrinsic_value = self.mdp.get_intrinsic_value(asset_price)
             intrinsic_values.append(intrinsic_value)
         max_payoff = max(intrinsic_values)
-        node.reward = max_payoff
+        node.reward = max_payoff 
 
     def backpropagate(self, node: ActionNode[TState, TAction]) -> None:
         current_node = node
@@ -244,3 +111,119 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
             current_node.n += 1
             current_node = current_node.parent
             
+    def simulate_action(self, node: ActionNode[TState, TAction]):
+        if node.parent == None:
+            initial_state = self.mdp.initial_state()
+            node.state = initial_state
+            node.valid_actions = self.mdp.actions(node.state)
+            return
+
+        if node.inducing_action == None:
+            raise RuntimeError("Action was null for non-null parent")
+        new_state = self.mdp.transition(node.parent.state, node.inducing_action)
+        node.state = new_state
+        node.valid_actions = self.mdp.actions(node.state)
+        
+    def detach_parent(self,node: ActionNode[TState, TAction]):
+        del node.parent
+        node.parent = None
+
+    def run_iteration(self, node: ActionNode[TState, TAction],iterations:int):
+        for i in range(iterations):
+            explore_node = self.select(node)
+            expanded_node = self.expand(explore_node)
+            if self.vc:
+                self.simulate_hindsight(expanded_node)
+            else:
+                self.simulate(expanded_node)
+            self.backpropagate(expanded_node)
+        next_node,next_action = self.next(node)
+        return next_node,next_action
+    
+    def run_iteration_hindsight(self, node: ActionNode[TState, TAction],iterations:int):
+        for i in range(iterations):
+            explore_node = self.select(node)
+            expanded_node = self.expand(explore_node)
+            self.simulate_hindsight(expanded_node)
+            self.backpropagate(expanded_node)
+        next_node,next_action = self.next(node)
+        return next_node,next_action
+
+    def next(self,node: ActionNode[TState, TAction]):
+
+        if self.mdp.is_terminal(node.state):
+            raise ValueError("Option has ended")
+
+        children = node.children
+        max_n = max(node.n for node in children)
+        if self.verbose:
+            print("number of visits of most visited node" ,max_n)
+
+        best_children = [c for c in children if c.n == max_n]
+        best_child = random.choice(best_children)
+
+        return best_child, best_child.inducing_action
+
+
+    def run_option(self):
+        root_node = ActionNode[TState, TAction](None, None)
+        self.simulate_action(root_node)
+        while True:    
+            root_node,action = self.run_iteration(root_node, 200)
+            if action == USoptionAction.EXERCISE:
+                if self.verbose:
+                    print("the action is exercise")
+                final_node = root_node
+                intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
+                if self.verbose:
+                    print("the final reward is", intrinsic_value)
+                return intrinsic_value
+
+            if root_node.state.time_step == self.mdp.T:
+                if self.verbose:
+                    print("reach maturity date")                
+                final_node = root_node
+                intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
+                if self.verbose:
+                    print("the final reward is", intrinsic_value)
+                return intrinsic_value
+            self.detach_parent(root_node)
+    
+
+    def run_option_hindsight(self):
+        root_node = ActionNode[TState, TAction](None, None)
+        self.simulate_action(root_node)
+        while True:    
+            root_node,action = self.run_iteration_hindsight(root_node, 200)
+            if action == USoptionAction.EXERCISE:
+                if self.verbose:
+                    print("the action is exercise")
+                final_node = root_node
+                intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
+                if self.verbose:
+                    print("the final reward is", intrinsic_value)
+                return intrinsic_value
+            if root_node.state.time_step == self.mdp.T:
+                if self.verbose:
+                    print("reach maturity date")
+                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
+                if self.verbose:
+                    print("the final reward is", intrinsic_value)
+                return intrinsic_value
+            self.detach_parent(root_node)
+
+    def run_baseline(self):
+        root_node = ActionNode[TState, TAction](None, None)
+        self.simulate_action(root_node)
+        current_state = root_node.state
+        while True:
+            action = USoptionAction.HOLD
+            new_state = self.mdp.transition(current_state, action)
+            if new_state.time_step == self.mdp.T or new_state.is_terminal == True:
+                intrinsic_value = self.mdp.get_intrinsic_value(current_state.asset_price)
+                if self.verbose:
+                    print("reward for this round",intrinsic_value)
+                return intrinsic_value
+            current_state = new_state
+
+

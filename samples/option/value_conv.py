@@ -51,6 +51,6 @@ df = pd.DataFrame({
 })
 
 # Save to CSV
-output_file = f"samples/option/output_value_conv/value_convergence_config_{config.config_name}.csv"
+output_file = f"samples/option/output_value_conv/value_convergence_config_{config.config_name}_test.csv"
 df.to_csv(output_file, index=False)
 print(f"Root rewards saved to {output_file}")

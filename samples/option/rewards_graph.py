@@ -3,7 +3,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import samples.option.config as config
 
-df = pd.read_csv(f'samples/option/output/results_config_{config.config_name}.csv')
+df = pd.read_csv(f'samples/option/output/results_config_{config.config_name}_test.csv')
 
 # Plot the data
 plt.figure(figsize=(7, 7))
