@@ -169,7 +169,7 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         root_node = ActionNode[TState, TAction](None, None)
         self.simulate_action(root_node)
         while True:    
-            root_node,action = self.run_iteration(root_node, 200)
+            root_node,action = self.run_iteration(root_node, 400)
             if action == USoptionAction.EXERCISE:
                 if self.verbose:
                     print("the action is exercise")
@@ -181,12 +181,19 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
 
             if root_node.state.time_step == self.mdp.T:
                 if self.verbose:
-                    print("reach maturity date")                
+                    print("reach maturity date")
+                
                 final_node = root_node
                 intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
-                if self.verbose:
-                    print("the final reward is", intrinsic_value)
-                return intrinsic_value
+
+                if intrinsic_value > 0:
+                    if self.verbose:
+                        print("Auto exercise at maturity with value:", intrinsic_value)
+                    return intrinsic_value
+                else:
+                    if self.verbose:
+                        print("Option expired worthless (out-of-the-money).")
+                    return 0.0
             self.detach_parent(root_node)
     
 
@@ -194,7 +201,7 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
         root_node = ActionNode[TState, TAction](None, None)
         self.simulate_action(root_node)
         while True:    
-            root_node,action = self.run_iteration_hindsight(root_node, 200)
+            root_node,action = self.run_iteration_hindsight(root_node, 400)
             if action == USoptionAction.EXERCISE:
                 if self.verbose:
                     print("the action is exercise")
@@ -206,10 +213,18 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
             if root_node.state.time_step == self.mdp.T:
                 if self.verbose:
                     print("reach maturity date")
-                intrinsic_value = self.mdp.get_intrinsic_value(root_node.state.asset_price)
-                if self.verbose:
-                    print("the final reward is", intrinsic_value)
-                return intrinsic_value
+                
+                final_node = root_node
+                intrinsic_value = self.mdp.get_intrinsic_value(final_node.state.asset_price)
+
+                if intrinsic_value > 0:
+                    if self.verbose:
+                        print("Auto exercise at maturity with value:", intrinsic_value)
+                    return intrinsic_value
+                else:
+                    if self.verbose:
+                        print("Option expired worthless (out-of-the-money).")
+                    return 0.0
             self.detach_parent(root_node)
 
     def run_baseline(self):
@@ -225,5 +240,4 @@ class OptionSolver(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom], Gene
                     print("reward for this round",intrinsic_value)
                 return intrinsic_value
             current_state = new_state
-
 

@@ -117,21 +117,13 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
 
     def simulate_hindsight(self, node: MENTSNode[TState, TAction], depth=0) -> float:
         current_state = node.state
-        asset_prices = [current_state.asset_price]
-        time = current_state.time_step
-        while time < self.mdp.T:
+        max_intrinsic = self.mdp.get_intrinsic_value(current_state.asset_price)
+        while current_state.time_step < self.mdp.T:
             action = USoptionAction.HOLD
-            new_state = self.mdp.transition(current_state, action)
-            asset_prices.append(new_state.asset_price)
-            current_state = new_state
-            time = current_state.time_step
-
-        intrinsic_values = []
-        for asset_price in asset_prices:
-            intrinsic_value = self.mdp.get_intrinsic_value(asset_price)
-            intrinsic_values.append(intrinsic_value)
-        max_payoff = max(intrinsic_values)
-        return max_payoff
+            current_state = self.mdp.transition(current_state, action)
+            intrinsic = self.mdp.get_intrinsic_value(current_state.asset_price)
+            max_intrinsic = max(max_intrinsic, intrinsic)
+        return max_intrinsic
 
     def backpropagate(self, node: MENTSNode[TState, TAction],action, reward: float) -> None:
         current_reward = reward
@@ -219,6 +211,14 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         if self.mdp.is_terminal(node.state):
             raise ValueError("Option has ended")
         
+        if not node.children:
+            # fallback: randomly choose an action
+            random_action = random.choice(node.valid_actions)
+            fallback_child = MENTSNode(node, random_action)
+            node.add_child(fallback_child)
+            self.simulate_action(fallback_child)
+            return fallback_child, random_action
+        
         soft_indmax_probs = self.soft_indmax(node.Q_sft)
         if self.verbose:
             print("soft_indmax_probs",soft_indmax_probs)
@@ -252,10 +252,19 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
                 intrinsic_value = self.mdp.get_intrinsic_value(current_node.state.asset_price)
                 return intrinsic_value
             if new_node.state.time_step == self.mdp.T:
-                intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
                 if self.verbose:
-                    print("the final reward is", intrinsic_value)
-                return intrinsic_value
+                    print("reach maturity date")
+                
+                intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
+
+                if intrinsic_value > 0:
+                    if self.verbose:
+                        print("Auto exercise at maturity with value:", intrinsic_value)
+                    return intrinsic_value
+                else:
+                    if self.verbose:
+                        print("Option expired worthless (out-of-the-money).")
+                    return 0.0
             current_node = new_node
             self.detach_parent(current_node)
     
@@ -277,8 +286,19 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
                 intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
                 return intrinsic_value
             if new_node.state.time_step == self.mdp.T:
+                if self.verbose:
+                    print("reach maturity date")
+                
                 intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
-                return intrinsic_value
+
+                if intrinsic_value > 0:
+                    if self.verbose:
+                        print("Auto exercise at maturity with value:", intrinsic_value)
+                    return intrinsic_value
+                else:
+                    if self.verbose:
+                        print("Option expired worthless (out-of-the-money).")
+                    return 0.0
             current_node = new_node
             self.detach_parent(root_node)
     
@@ -307,8 +327,6 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         self.simulate_action(root_node)
         root_node,action_taken, root_rewards = self.run_iteration_hindsight(root_node, 200)
         return root_rewards
-
-
 
     
 

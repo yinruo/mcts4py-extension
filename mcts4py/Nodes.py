@@ -2,7 +2,7 @@ import math
 import random
 import time
 from abc import ABC, abstractmethod
-from typing import Generic, MutableMapping, Optional, TypeVar
+from typing import Generic, MutableMapping, Optional, TypeVar, Tuple
 from mcts4py.Types import TAction, TState, TRandom
 from math import *
 from collections import defaultdict
@@ -367,3 +367,70 @@ class MENTSNode(Generic[TState, TAction], Node[TAction]):
     def __str__(self):
         inducing_action_value = self.inducing_action.value if self.inducing_action is not None else "None"
         return f"State: {self.state}, Action: {inducing_action_value}, Visits: {self.n}, Q_sft: {self.Q_sft}"
+
+
+class MultiMENTSNode(Generic[TState, TAction], Node[TAction]):
+    def __init__(self,
+                 parent: Optional[TNode] = None,
+                 inducing_action: Optional[TAction] = None,
+                 ):
+        self.parent = parent
+        self.children: list["MultiMENTSNode"] = []
+        self.n = 0
+        self.depth = 0.0
+        self.__state: Optional[TState] = None
+        self.__valid_actions: Optional[list[TAction]] = None
+        self.reward = 0.0
+        self.action_reward = defaultdict(float)
+        self.future_reward = 0.0
+        self.Q_sft = defaultdict(float) 
+        self.visits = defaultdict(float)
+        super().__init__(parent, inducing_action)
+
+    @property
+    def state(self) -> TState:
+        if self.__state is None:
+            raise RuntimeError(f"Simulation not run at depth: {self.depth}")
+        return self.__state
+
+    @state.setter
+    def state(self, value: TState) -> None:
+        self.__state = value
+
+    @property
+    def valid_actions(self) -> list[TAction]:
+        if self.__valid_actions is None:
+            raise RuntimeError(f"Simulation not run")
+        return self.__valid_actions
+
+    @valid_actions.setter
+    def valid_actions(self, value: list[TAction]) -> None:
+        self.__valid_actions = value
+
+    def get_parent(self) -> Optional[TNode]:
+        return self.parent
+
+    def add_child(self, child: "MultiMENTSNode") -> None:
+        self.children.append(child)
+
+    def get_children_of_action(self, action: TAction) -> list["MultiMENTSNode"]:
+        return [child for child in self.children if child.inducing_action == action]
+
+    def is_fully_expanded(self) -> bool:
+        return len(self.children) == len(self.valid_actions)
+
+    def most_visited_child(self) -> "MultiMENTSNode":
+        return max(self.children, key=lambda c: c.n)
+
+    def get_action_key(self, action: TAction) -> Tuple:
+        """
+        将 action 转换成 hashable 的 key，例如将 MultiOptionAction(decisions=[0,1,0]) → (0,1,0)
+        """
+        return tuple(action.decisions)
+
+    def __str__(self):
+        try:
+            action_key = self.get_action_key(self.inducing_action)
+        except:
+            action_key = self.inducing_action  # fallback
+        return f"State: {self.state}, Action: {action_key}, Visits: {self.n}, Q_sft: {self.Q_sft}"
