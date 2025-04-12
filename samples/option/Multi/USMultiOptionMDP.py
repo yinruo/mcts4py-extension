@@ -43,9 +43,6 @@ class USMultiOptionMDP(MDP[MultiOptionAction, MultiOptionState]):
         self.u_list = [np.exp(s * np.sqrt(dt)) for s in sigma_list]
         self.d_list = [1.0 / u for u in self.u_list]
         self.p_list = [(np.exp((r - q) * dt) - d) / (u - d) for u, d, q in zip(self.u_list, self.d_list, q_list)]
-        self.gmm_model = GaussianMixture(n_components=1)
-        fake_data = np.random.normal(0, 0.2, size=(1000, self.n))
-        self.gmm_model.fit(fake_data)
         self.corr_matrix = np.identity(self.n)
         sigma_array = np.array(self.sigma_list)
         self.cov_matrix = np.outer(sigma_array, sigma_array) * self.corr_matrix * self.dt
@@ -57,11 +54,6 @@ class USMultiOptionMDP(MDP[MultiOptionAction, MultiOptionState]):
             return np.maximum(S - K, 0) 
         else:
             print("option type unknown")
-
-    def simulate_gmm(self, current_prices: List[float]) -> List[float]:
-        log_returns = self.gmm_model.sample()[0][0]
-        new_prices = [S * np.exp(r) for S, r in zip(current_prices, log_returns)]
-        return new_prices
     
     def simulate_mvbm(self, current_prices: List[float]) -> List[float]:
         mu = np.array([(self.r - q - 0.5 * sigma ** 2) * self.dt for q, sigma in zip(self.q_list, self.sigma_list)])
