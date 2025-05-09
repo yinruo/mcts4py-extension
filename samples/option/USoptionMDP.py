@@ -77,7 +77,7 @@ class USoptionMDP(MDP[USoptionAction, USoptionState]):
             else:
                 new_price = state.asset_price * self.d
         new_time_step = round(state.time_step + self.dt, 3) 
-        if state.time_step + self.dt == self.T or action == USoptionAction.EXERCISE:
+        if math.isclose(state.time_step + self.dt, self.T) or action == USoptionAction.EXERCISE:
             return USoptionState(new_time_step, new_price, True)
         else: 
             return USoptionState(new_time_step, new_price, False)

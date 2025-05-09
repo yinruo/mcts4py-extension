@@ -111,26 +111,22 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
                 #random_action = random.choice(actions)
                 new_state = self.mdp.transition(current_state, action)
                 intrinsic_value = self.mdp.get_intrinsic_value(new_state.asset_price)
-                if new_state.time_step == self.mdp.T or new_state.is_terminal == True or intrinsic_value > 0:
+                if math.isclose(new_state.time_step,self.mdp.T) or new_state.is_terminal == True or intrinsic_value > 0:
                     return intrinsic_value
                 current_state = new_state
 
     def simulate_hindsight(self, node: MENTSNode[TState, TAction], depth=0) -> float:
         current_state = node.state
-        asset_prices = [current_state.asset_price]
+        max_payoff = self.mdp.get_intrinsic_value(current_state.asset_price)
         time = current_state.time_step
+
         while time < self.mdp.T:
             action = USoptionAction.HOLD
-            new_state = self.mdp.transition(current_state, action)
-            asset_prices.append(new_state.asset_price)
-            current_state = new_state
+            current_state = self.mdp.transition(current_state, action)
+            payoff = self.mdp.get_intrinsic_value(current_state.asset_price)
+            max_payoff = max(max_payoff, payoff)
             time = current_state.time_step
 
-        intrinsic_values = []
-        for asset_price in asset_prices:
-            intrinsic_value = self.mdp.get_intrinsic_value(asset_price)
-            intrinsic_values.append(intrinsic_value)
-        max_payoff = max(intrinsic_values)
         return max_payoff
 
     def backpropagate(self, node: MENTSNode[TState, TAction],action, reward: float) -> None:
@@ -176,9 +172,6 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         for action in node.valid_actions:
             node.Q_sft[action.value] = 0.0 
         
-    def detach_parent(self,node: MENTSNode[TState, TAction]):
-        del node.parent
-        node.parent = None
         
     def run_iteration(self, node: MENTSNode[TState, TAction],iterations:int):
         root_rewards = []
@@ -251,13 +244,12 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
                     print("the action is exercise")
                 intrinsic_value = self.mdp.get_intrinsic_value(current_node.state.asset_price)
                 return intrinsic_value
-            if new_node.state.time_step == self.mdp.T:
+            if math.isclose(new_node.state.time_step, self.mdp.T):
                 intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
                 if self.verbose:
                     print("the final reward is", intrinsic_value)
                 return intrinsic_value
             current_node = new_node
-            self.detach_parent(current_node)
     
 
     def run_option_hindsight(self):
@@ -276,11 +268,10 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
                     print("the final reward is", intrinsic_value)
                 intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
                 return intrinsic_value
-            if new_node.state.time_step == self.mdp.T:
+            if math.isclose(new_node.state.time_step,self.mdp.T):
                 intrinsic_value = self.mdp.get_intrinsic_value(new_node.state.asset_price)
                 return intrinsic_value
             current_node = new_node
-            self.detach_parent(root_node)
     
     def run_baseline(self):
         root_node = MENTSNode[TState, TAction](None, None)
@@ -289,7 +280,7 @@ class OptionSolverMENTS(MCTSSolver[TAction, NewNode[TRandom, TAction], TRandom],
         while True:
             action = USoptionAction.HOLD
             new_state = self.mdp.transition(current_state, action)
-            if new_state.time_step == self.mdp.T or new_state.is_terminal == True:
+            if math.isclose(new_state.time_step, self.mdp.T) or new_state.is_terminal == True:
                 intrinsic_value = self.mdp.get_intrinsic_value(current_state.asset_price)
                 if self.verbose:
                     print("reward for this round",intrinsic_value)

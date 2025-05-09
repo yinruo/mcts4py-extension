@@ -5,7 +5,6 @@ from samples.option.OptionSolver import OptionSolver
 from samples.option.USoptionMDP import USoptionMDP
 from samples.option.ls.monte_carlo_class import MonteCarloOptionPricing
 from samples.option.OptionSolverMENTS import OptionSolverMENTS
-from samples.option.MENTS.SolverMents import StatefulSolverMENTS
 import numpy as np
 import samples.option.config as config
 num_runs = 300
@@ -61,13 +60,13 @@ MENTS_solver = OptionSolverMENTS(
     verbose=False
 )
 
-ments_solver_2 = StatefulSolverMENTS(
+""" ments_solver_2 = StatefulSolverMENTS(
     mdp,
     simulation_depth_limit = 1000,
     discount_factor = 0.6,
     exploration_constant=1.0
     
-) 
+)  """
 # Run simulations for Standard MCTS
 for _ in range(num_runs):
 
@@ -99,7 +98,7 @@ df = pd.DataFrame(results_dict)
 #df.to_csv(f'samples/option/output/results_config_{config_name}.csv', index=False)
 
 try:
-    df.to_csv(f'samples/option/output/results_config_{config.config_name}.csv', index=False)
+    df.to_csv(f'samples/option/output/results_config_{config.config_name}_test.csv', index=False)
     print("File saved successfully: success")
 except Exception as e:
     print(f"Failed to save file: {e}")
